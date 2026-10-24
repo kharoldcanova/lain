@@ -4,7 +4,8 @@ from pathlib import Path
 
 from llama_cpp import Llama
 
-MODEL_PATH = Path(__file__).resolve().parents[1] / "outputs" / "minicpm-lain-q4_k_m.gguf"
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "outputs"
+MODEL_PATH = next(OUTPUT_DIR.glob("*.gguf"), None)
 SYSTEM_PROMPT = (Path(__file__).resolve().parents[1] / "datasets" / "system_prompt.txt").read_text().strip()
 
 
