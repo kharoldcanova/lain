@@ -5,7 +5,7 @@ Basado en el documento fuente del vault (`Proyecto LAIN..md`). Orden: primero mo
 ## Fase 1: Modelo (Fine-tuning en Python — PC)
 
 ### Funcionalidad 5: Fine-tuning
-- [ ] T5.1 Crear entorno Python en `python_ai/` con dependencias (torch, unsloth, transformers).
+- [x] T5.1 Crear entorno Python en `python_ai/` con dependencias (torch, unsloth, transformers).
 - [ ] T5.2 Preparar dataset de personalidad en español.
 - [ ] T5.3 Script de fine-tuning con Unsloth.
 - [ ] T5.4 Exportar modelo final a formato GGUF.

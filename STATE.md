@@ -1,15 +1,19 @@
 # STATE.md
 
 ## Tarea en curso
-Inicialización del proyecto LAIN. Documentación base creada (README, AGENTS, STATE, CHANGELOG, ARCHITECTURE, .gitignore). Sin código aún.
+T5.2 — Preparar dataset de personalidad en español (`python_ai/datasets/`).
 
 ## Objetivo actual
-Preparar la estructura de documentación y el repositorio para iniciar el desarrollo de la app Flutter + fine-tuning Python.
+Completar la Fase 1 (modelo): dataset, script de fine-tuning y exportación a GGUF.
 
 ## Zonas frágiles
-- Ninguna todavía (proyecto vacío).
+- Ninguna todavía.
+
+## Completado
+- Commit inicial del repositorio.
+- T5.1 Entorno Python base creado (`python_ai/` con `requirements.txt`, `README.md`, carpetas).
 
 ## Próximos pasos
-- Crear estructura de carpetas `mobile_app/` y `python_ai/`.
-- Configurar Flutter (pubspec.yaml) y entorno Python (requirements.txt).
-- Implementar puente FFI para llama.cpp / whisper.cpp.
+- T5.2 Definir formato y contenido del dataset de personalidad en español.
+- T5.3 Script de fine-tuning con Unsloth.
+- T5.4 Exportar modelo a GGUF.
