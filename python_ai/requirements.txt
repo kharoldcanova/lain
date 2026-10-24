@@ -5,3 +5,4 @@ datasets
 accelerate
 peft
 bitsandbytes
+llama-cpp-python

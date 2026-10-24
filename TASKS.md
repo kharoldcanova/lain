@@ -8,8 +8,8 @@ Basado en el documento fuente del proyecto. Orden: primero modelo, luego conexi�
 - [x] T5.1 Crear entorno Python en `python_ai/` con dependencias (torch, unsloth, transformers).
 - [x] T5.2 Preparar dataset de personalidad en español (`personality_es.jsonl`).
 - [x] T5.3 Script de fine-tuning con Unsloth (`scripts/finetune.py`).
-- [ ] T5.4 Exportar modelo final a formato GGUF.
-- [ ] T5.5 Validar modelo exportado (inferencia de prueba en PC).
+- [ ] T5.4 Ejecutar fine-tuning en PC (GPU) y exportar GGUF.
+- [ ] T5.5 Probar inferencia con `scripts/infer.py` (validar personalidad).
 
 ## Fase 2: Conexión con la app (Flutter)
 
