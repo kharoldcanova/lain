@@ -18,6 +18,7 @@ Repositorio en inicialización: documentación base creada, sin código ni manif
 ## Convenciones
 
 - Commits: Conventional Commits `<tipo>(<alcance>): <descripción breve en minúsculas>`. Tipos: `feat`, `fix`, `refactor`, `perf`, `docs`, `chore`.
+- Antes de cada commit, ejecutar la prueba correspondiente y verificar que pase. No commitear si las pruebas fallan.
 - Dart/Flutter: Effective Dart, tipado estricto, evitar `dynamic` salvo FFI.
 - Python: PEP 8, tipado estricto (mypy), docstrings.
 - C/C++ (puente FFI): manejo seguro de memoria, liberar punteros (evitar leaks en móvil).
