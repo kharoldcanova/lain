@@ -24,6 +24,6 @@ Repositorio en inicialización: documentación base creada, sin código ni manif
 
 ## Notas
 
-- Documento fuente de intención: vault de Obsidian `Proyecto LAIN..md` (Boveda/AI/IA).
+- Documento fuente de intención: `Proyecto LAIN..md`.
 - Estructura prevista: `mobile_app/` (Flutter) y `python_ai/` (entrenamiento).
 - No inventar comandos ni tooling hasta que existan manifiestos reales.

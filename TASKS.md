@@ -1,6 +1,6 @@
 # TASKS.md — Desglose por funcionalidad
 
-Basado en el documento fuente del vault (`Proyecto LAIN..md`). Orden: primero modelo, luego conexión con la app.
+Basado en el documento fuente del proyecto. Orden: primero modelo, luego conexión con la app.
 
 ## Fase 1: Modelo (Fine-tuning en Python — PC)
 
