@@ -1,0 +1,69 @@
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+*.ipr
+*.iws
+.idea/
+*.swp
+*.lock
+pubspec.lock
+
+# Android
+android/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Modelos y binarios de IA (pesados)
+*.gguf
+*.bin
+*.onnx
+assets/models/
+
+# Entornos y secretos
+.env
+.env.*
+*.pem
+*.key
+
+# Temporales y debug
+*.log
+tmp/
+temp/
+.DS_Store
+Thumbs.db
+
+# Notas personales y drafts (no versionar)
+*.draft.md
+*.personal.md
+NOTES.md
+notes/
+drafts/
