@@ -1,43 +1,55 @@
-# Flutter / Dart
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-build/
-*.iml
-*.ipr
-*.iws
-.idea/
-*.swp
-*.lock
-pubspec.lock
+# Flutter / Dart (mobile_app)
+mobile_app/.dart_tool/
+mobile_app/.flutter-plugins
+mobile_app/.flutter-plugins-dependencies
+mobile_app/.packages
+mobile_app/build/
+mobile_app/*.iml
+mobile_app/*.ipr
+mobile_app/*.iws
+mobile_app/.idea/
+mobile_app/*.swp
+mobile_app/*.lock
+mobile_app/pubspec.lock
 
-# Android
-android/.gradle/
-android/captures/
-android/gradlew
-android/gradlew.bat
-android/local.properties
-android/key.properties
+# Android (mobile_app)
+mobile_app/android/.gradle/
+mobile_app/android/captures/
+mobile_app/android/gradlew
+mobile_app/android/gradlew.bat
+mobile_app/android/local.properties
+mobile_app/android/key.properties
 *.jks
 *.keystore
 
-# iOS
-ios/Pods/
-ios/.symlinks/
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
+# iOS (mobile_app)
+mobile_app/ios/Pods/
+mobile_app/ios/.symlinks/
+mobile_app/ios/Flutter/Flutter.framework
+mobile_app/ios/Flutter/Flutter.podspec
 
-# Python
+# Python (python_ai)
+python_ai/__pycache__/
+python_ai/*.py[cod]
+python_ai/*$py.class
+python_ai/.venv
+python_ai/venv
+python_ai/env
+python_ai/*.egg-info/
+python_ai/dist/
+python_ai/build/
+python_ai/.pytest_cache/
+python_ai/.mypy_cache/
+python_ai/.ruff_cache/
+
+# También cubrir cualquier subdirectorio por si acaso
 __pycache__/
 *.py[cod]
 *$py.class
-.venv/
-venv/
-env/
+.venv
+venv
+env
 *.egg-info/
-dist/
-build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -46,7 +58,8 @@ build/
 *.gguf
 *.bin
 *.onnx
-assets/models/
+mobile_app/assets/models/
+python_ai/outputs/
 
 # Entornos y secretos
 .env
