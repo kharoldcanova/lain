@@ -1,21 +1,40 @@
 """Fine-tuning de MiniCPM para personalidad en español con Unsloth."""
 
-import json
 from pathlib import Path
 
 from unsloth import FastLanguageModel
 from trl import SFTTrainer
 from transformers import TrainingArguments
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 
 MODEL_NAME = "openbmb/MiniCPM-2B-sft-bf16"
 MAX_SEQ_LENGTH = 2048
-DATASET_PATH = Path(__file__).resolve().parents[1] / "datasets" / "personality_es.jsonl"
+LOCAL_DATASET = Path(__file__).resolve().parents[1] / "datasets" / "personality_es.jsonl"
+SYSTEM_PROMPT = (Path(__file__).resolve().parents[1] / "datasets" / "system_prompt.txt").read_text().strip()
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "outputs"
+HF_DATASET = "mlabonne/guanaco-llama2-1k"
+
+
+def format_local(example):
+    return {
+        "text": f"<|system|>\n{SYSTEM_PROMPT}\n<|user|>\n{example['instruction']}\n<|assistant|>\n{example['response']}"
+    }
+
+
+def format_hf(example):
+    # guanaco format: "### Human: ... ### Assistant: ..."
+    text = example.get("text", "")
+    return {"text": f"<|system|>\n{SYSTEM_PROMPT}\n{text}"}
 
 
 def load_data():
-    return load_dataset("json", data_files=str(DATASET_PATH), split="train")
+    local = load_dataset("json", data_files=str(LOCAL_DATASET), split="train")
+    local = local.map(format_local, remove_columns=local.column_names)
+
+    hf = load_dataset(HF_DATASET, split="train")
+    hf = hf.map(format_hf, remove_columns=hf.column_names)
+
+    return concatenate_datasets([local, hf])
 
 
 def main():
