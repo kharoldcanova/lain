@@ -24,3 +24,4 @@
 - Smoke test de fine-tuning: 1 paso, loss 3.004, 30 s en RTX 3050 6 GB.
 - Export GGUF Q4_K_M correcto (`MiniCPM5-2B.Q4_K_M.gguf`, 1.5 GB).
 - Inferencia con `llama-cpp-python` sobre el GGUF exportado: respuesta en español.
+- Corrida completa: 60 pasos con dataset local + guanaco, loss 2.30 → 0.68, GGUF final exportado y verificado.
