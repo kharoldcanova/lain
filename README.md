@@ -140,6 +140,7 @@ Cuando el usuario corrige una respuesta, el registro conserva `rejected_alternat
 
 ## Documentación
 
+- [`WORKFLOW.md`](WORKFLOW.md) — Flujo completo: Python (SFT, DPO, RAG), ciclo de aprendizaje y app móvil.
 - [`CONSCIENCIA.md`](CONSCIENCIA.md) — Fundamentos teóricos y arquitectura de consciencia funcional (GWT, HOT, RPT, multimodalidad, creencias, ciclo de reentrenamiento).
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — Diseño arquitectónico, capas y flujo metacognitivo.
 - [`STATE.md`](STATE.md) — Tarea en curso y próximos pasos.

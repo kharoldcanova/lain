@@ -17,6 +17,7 @@
 - `python_ai/scripts/import_experiences.py`: convierte el JSONL exportado por la app en dataset SFT (filtra `suitable_for_sft`, exige `<thought>` completo y evita duplicados).
 - README raíz: sección «Ciclo de aprendizaje» (exportar → importar → entrenar → desplegar) y regla hechos→RAG / estilo→reentrenamiento.
 - TASKS.md: Funcionalidad 11 (evaluar modelo pequeño con buen español), 12 (exportar experiencias desde la app) y 13 (ciclo de aprendizaje).
+- `WORKFLOW.md`: flujo completo de LAIN — entorno Python (SFT, DPO, RAG, importador), runtime en el celular, ciclo de aprendizaje y comparación SFT/DPO/RAG.
 
 ### Changed
 - Reescrita la concepción del proyecto a partir del vault de Obsidian «Teoría y Arquitectura de Consciencia para LAIN».
