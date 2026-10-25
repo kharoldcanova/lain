@@ -13,7 +13,7 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - Consumo de RAM: MiniCPM-V Q4_K_M (~2.2–2.5 GB) + mmproj (~150–250 MB) + Laya/BMP (~100 MB) debe mantenerse < 3.5 GB (RNF03).
 - Proyector multimodal `mmproj.gguf` debe coincidir con la versión exacta del modelo base.
 - Entorno Python: requiere Python 3.12 (Unsloth no soporta 3.13+); `torch`/`torchvision` deben ser de la misma build CUDA (cu126).
-- Dataset local muy pequeño (5 ejemplos): el fine-tuning de 60 pasos sobreajusta (loss 0.68); ampliar antes de una corrida "real".
+- Dataset local de 87 ejemplos: validar con `validate_dataset.py` y medir el formato con `check_format.py` antes de cada corrida.
 
 ## Completado
 - Commit inicial del repositorio.
@@ -26,8 +26,9 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - Inferencia validada con `llama-cpp-python` sobre el GGUF exportado.
 - T5.4 completado: 60 pasos (loss 2.30 → 0.68), checkpoint-60 y GGUF Q4_K_M exportado.
 - T5.5 completado: inferencia del modelo final en español alineada al system prompt.
+- Formato `<think>` estabilizado: dataset de 87 ejemplos, validador de dataset y `check_format.py` con 20/20 bloques JSON válidos.
 
 ## Próximos pasos
-- Ampliar `personality_es.jsonl` antes de una corrida de producción (evitar sobreajuste).
+- Evaluar un modelo base con mejor español (T11).
 - Fase 2: T1.1 configurar Flutter y T1.2 puente FFI para llama.cpp con el GGUF actual.
 - Nuevas líneas (ver TASKS.md): enrutador Laya/BMP, multimodalidad MiniCPM-V, trazas `<think>`, persistencia `lain_experiences.jsonl` y ciclo SFT/CoT + DPO.

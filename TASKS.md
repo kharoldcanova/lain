@@ -92,7 +92,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T13.2 Versionar datasets y GGUF (fecha/hash) para poder revertir.
 - [ ] T13.3 Pipeline DPO con `rejected_alternative`.
 - [ ] T13.4 Prueba de regresión de personalidad tras cada reentrenamiento.
-- [ ] T13.5 `scripts/check_format.py`: medir la tasa de `<think>` JSON válido (≥90 % y 0 bloques sin cerrar).
+- [x] T13.5 `scripts/check_format.py`: mide la tasa de `<think>` JSON válido (20/20 tras ampliar el dataset).
 
 ## Fase 3: Requisitos no funcionales (transversal)
 

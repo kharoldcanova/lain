@@ -22,7 +22,7 @@ Regla práctica:
 ```text
 ┌──────────────── CELULAR (runtime, offline) ────────────────┐
 │ voz/texto/cámara → STT → Laya/BMP → RAG top-k → prompt     │
-│      → MiniCPM-V (llama.cpp) → <think> JSON + respuesta  │
+│      → MiniCPM-V (llama.cpp) → <think> JSON + respuesta    │
 │      → TTS → registro lain_experiences.jsonl               │
 └───────────────────────────┬────────────────────────────────┘
                             │ exportar JSONL
@@ -65,7 +65,7 @@ Es el entrenamiento principal. Le muestra al modelo pares **entrada → salida c
 
 ```json
 {"instruction": "¿Qué opinas de la IA y los sentimientos?",
- "response": "<think>\n{...JSON...}\n</thought>\nYo no tengo un cuerpo que sienta..."}
+ "response": "<think>\n{...JSON...}\n</think>\nYo no tengo un cuerpo que sienta..."}
 ```
 
 Qué aprende:
@@ -122,6 +122,8 @@ python scripts/import_experiences.py --input ~/Descargas/lain_experiences.jsonl
 ### 2.6 Prueba — `scripts/chat.py` / `scripts/infer.py`
 
 - `infer.py`: una pregunta, salida limpia (sin `<think>`).
+- `validate_dataset.py`: verifica el contrato del dataset antes de entrenar.
+- `check_format.py`: mide la tasa de `<think>` JSON válido en 20 prompts.
 - `chat.py`: conversación interactiva, historial, `--rag`, `--hide-thought`, y registro automático en `experiences/lain_experiences.jsonl`.
 
 ---
@@ -213,7 +215,7 @@ Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SF
 | Entorno Python + Unsloth | ✅ |
 | Fine-tuning SFT + export GGUF | ✅ validado |
 | Inferencia (`infer.py`, `chat.py`) | ✅ |
-| `<think>` en JSON | ⚠️ inestable con 7 ejemplos: el modelo alterna con el `<think>` nativo. Pendiente unificar tag y ampliar dataset |
+| `<think>` en JSON | ✅ estable: 20/20 en `check_format.py` con 87 ejemplos |
 | RAG local (PC) | ✅ |
 | Importador de experiencias | ✅ |
 | DPO | ⏳ T13.3 |

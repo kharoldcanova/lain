@@ -18,6 +18,9 @@
 - README raíz: sección «Ciclo de aprendizaje» (exportar → importar → entrenar → desplegar) y regla hechos→RAG / estilo→reentrenamiento.
 - TASKS.md: Funcionalidad 11 (evaluar modelo pequeño con buen español), 12 (exportar experiencias desde la app) y 13 (ciclo de aprendizaje).
 - `WORKFLOW.md`: flujo completo de LAIN — entorno Python (SFT, DPO, RAG, importador), runtime en el celular, ciclo de aprendizaje y comparación SFT/DPO/RAG.
+- `python_ai/scripts/validate_dataset.py`: valida el contrato del dataset (`<think>` + JSON de cuatro claves) antes de entrenar.
+- `python_ai/scripts/check_format.py`: mide la estabilidad del bloque `<think>` en 20 prompts y exige ≥90 % de JSON válido sin bloques abiertos.
+- Dataset SFT ampliado de 7 a 87 ejemplos (saludos, acompañamiento emocional, identidad, técnica, filosofía, cotidiano y adversariales).
 
 ### Changed
 - Reescrita la concepción del proyecto a partir del vault de Obsidian «Teoría y Arquitectura de Consciencia para LAIN».
@@ -28,6 +31,8 @@
 - `infer.py` usa el chat template del GGUF, valida la existencia del modelo y recorta el bloque de pensamiento.
 - `python_ai/README.md` con setup con `uv` (Python 3.12 + CUDA 12.6) y comandos de smoke test.
 - `.gitignore` incluye `python_ai/outputs_gguf/`.
+- El bloque de pensamiento se unificó en `<think>` (tag nativo de MiniCPM5). Con `<thought>` la plantilla de chat inyectaba un bloque vacío y el modelo aprendía a dejar el JSON fuera. Verificado: 20/20 en `check_format.py`.
+- Se corrigió el dataset inicial, que omitía el `</think>` de cierre.
 
 ### Verified
 - Smoke test de fine-tuning: 1 paso, loss 3.004, 30 s en RTX 3050 6 GB.
