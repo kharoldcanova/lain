@@ -11,6 +11,12 @@
 - T5.1 Entorno Python base completado.
 - `python_ai/README.md`: sección «Qué contiene realmente el modelo entrenado» explicando que el GGUF guarda pesos y no el dataset, qué es cada artefacto de `outputs/` y el riesgo de memorización.
 - `python_ai/scripts/chat.py`: chat manual con historial, streaming, `--hide-thought` y registro por turno en `experiences/lain_experiences.jsonl` con el esquema del vault (context/metacognition/response/training_metadata).
+- Bloque `<thought>` reestructurado a JSON con `thought_trace`, `prior_belief`, `belief_shift` y `axiom_alignment_check`; el dataset y el system prompt se alinearon a ese formato.
+- `python_ai/scripts/rag.py`: RAG local con embeddings on-device (`multilingual-e5-small`), SQLite y comandos `ingest`/`query`/`stats`/`clear`. `chat.py --rag` inyecta contexto recuperado.
+- `python_ai/requirements_rag.txt` y documentación del RAG en el README raíz y de `python_ai/`.
+- `python_ai/scripts/import_experiences.py`: convierte el JSONL exportado por la app en dataset SFT (filtra `suitable_for_sft`, exige `<thought>` completo y evita duplicados).
+- README raíz: sección «Ciclo de aprendizaje» (exportar → importar → entrenar → desplegar) y regla hechos→RAG / estilo→reentrenamiento.
+- TASKS.md: Funcionalidad 11 (evaluar modelo pequeño con buen español), 12 (exportar experiencias desde la app) y 13 (ciclo de aprendizaje).
 
 ### Changed
 - Reescrita la concepción del proyecto a partir del vault de Obsidian «Teoría y Arquitectura de Consciencia para LAIN».

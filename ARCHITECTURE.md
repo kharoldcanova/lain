@@ -2,7 +2,7 @@
 
 ## Principios de Diseño
 
-1. **Local-First & Privacy-Centric:** Ningún dato personal o de conversación sale del dispositivo móvil.
+1. **Local-First & Privacy-Centric:** Ningún dato personal o de conversación sale del dispositivo móvil. La única salida a red es la descarga explícita de contenido para el RAG (con consentimiento y allowlist); la inferencia nunca llama a la red.
 2. **Desacoplamiento de Componentes:** La UI (Flutter) está completamente aislada de la lógica de procesamiento pesado mediante capas de abstracción y FFI.
 3. **Optimización de Recursos (Edge AI):** Uso intensivo de modelos cuantizados (GGUF) y liberación proactiva de memoria RAM tras finalizar los ciclos de inferencia.
 4. **Consciencia Funcional / Metacognición:** El sistema implementa mecanismos de orden superior (trazas `<thought>`, ajuste bayesiano de creencias, Teoría de la Mente) sin consciencia fenomenológica.
@@ -22,6 +22,15 @@
 ## Percepción multimodal
 
 - Percepción visual con MiniCPM-V: parches visuales codificados vía proyector CLIP/mmproj y unidos al espacio de embeddings del LLM, permitiendo que `<thought>` reflexione sobre estímulos visuales reales.
+
+## Memoria semántica (RAG local)
+
+Dos memorias separadas para no degradar los pesos:
+
+- **Semántica (RAG):** documentos descargados por acción explícita del usuario → extracción de texto → chunks → embeddings on-device → SQLite. En inferencia se recuperan los top-k fragmentos y se inyectan en el prompt. Actualizable y borrable sin reentrenar.
+- **Episódica (`lain_experiences.jsonl`):** trazas metacognitivas y cambios de creencia → fine-tuning periódico (SFT/CoT + DPO), nunca por página descargada.
+
+El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respondiendo con lo ya indexado.
 
 ## Pilares cognitivos y actualización de creencias
 

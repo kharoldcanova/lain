@@ -49,8 +49,40 @@ python scripts/chat.py --prompt "Hola" --no-log
 ```
 
 Cada turno se agrega a `experiences/lain_experiences.jsonl` con el esquema del vault:
-`context` (Laya), `metacognition` (thought_trace), `response` y `training_metadata`.
-Los campos que aún no existen (Laya/BMP, creencias, reacción del usuario) quedan en `null`.
+`context` (Laya), `metacognition`, `response` y `training_metadata`.
+El bloque `<thought>` debe ser un JSON válido con `thought_trace`, `prior_belief`, `belief_shift` y
+`axiom_alignment_check`; `chat.py` lo parsea y rellena esos campos. Si el modelo no devuelve JSON válido,
+usa el texto completo como `thought_trace`. Los campos que dependen de Laya/BMP o del feedback del usuario
+(`laya_decision`, `user_reaction_score`, `rejected_alternative`) quedan en `null`.
+
+## Importar experiencias exportadas por la app
+
+La app exporta `lain_experiences.jsonl` (esquema del vault). Para incorporarlas al dataset:
+
+```bash
+python scripts/import_experiences.py --input ~/Descargas/lain_experiences.jsonl --dry-run
+python scripts/import_experiences.py --input ~/Descargas/lain_experiences.jsonl
+python scripts/finetune.py --max-steps 200
+```
+
+El importador descarta registros sin `thought_trace`, sin salida o marcados `suitable_for_sft: false`,
+y evita instrucciones duplicadas. Usa `--include-incomplete` para aceptar campos de creencias en `null`.
+
+## RAG local (conocimiento descargado)
+
+Indexa una URL o un archivo local en `rag/lain_rag.db` (SQLite + embeddings on-device):
+
+```bash
+python scripts/rag.py ingest https://ejemplo.com/nota
+python scripts/rag.py ingest --file ../README.md
+python scripts/rag.py query "¿qué es Laya/BMP?" --top-k 4
+python scripts/rag.py stats
+python scripts/rag.py clear
+```
+
+- Embeddings: `intfloat/multilingual-e5-small` (384 dims, se descarga una vez).
+- Sin red, las consultas siguen funcionando con lo ya indexado.
+- `chat.py --rag` inyecta los fragmentos recuperados en el prompt.
 
 ## Qué contiene realmente el modelo entrenado
 

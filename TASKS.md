@@ -64,6 +64,35 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T9.3 Codificar parches visuales e integrarlos al espacio de embeddings del LLM.
 - [ ] T9.4 Permitir que `<thought>` reflexione sobre estímulos visuales.
 
+### Funcionalidad 10: Conocimiento local (RAG)
+- [x] T10.1 Script RAG en PC: ingesta, chunking, embeddings y SQLite (`scripts/rag.py`).
+- [x] T10.2 Consulta semántica e inyección de contexto en `chat.py --rag`.
+- [ ] T10.3 Descarga de URLs en la app con consentimiento y allowlist.
+- [ ] T10.4 Extracción de texto y chunking on-device en Flutter.
+- [ ] T10.5 Embeddings on-device (e5-small / llama.cpp) y almacenamiento SQLite.
+- [ ] T10.6 Recuperación top-k e inyección en el prompt en el dispositivo.
+- [ ] T10.7 Gestión de fuentes: listar, ver y borrar conocimiento descargado.
+
+### Funcionalidad 11: Modelo local pequeño con buen español (investigación)
+- [ ] T11.1 Evaluar candidatos pequeños con español fuerte (Salamandra-2B-Instruct, EuroLLM-1.7B, Qwen3-1.7B, Gemma-3-1B) verificando soporte en Unsloth y licencia.
+- [ ] T11.2 Construir un set corto de evaluación en español: fluidez, coherencia, seguimiento de instrucciones y `<thought>` JSON válido.
+- [ ] T11.3 Medir el modelo actual (MiniCPM5-2B) contra los candidatos y registrar resultados.
+- [ ] T11.4 Elegir el modelo base y adaptar `finetune.py` / `infer.py`.
+- [ ] T11.5 Documentar la decisión, licencia y tamaño en RAM/GGUF.
+
+### Funcionalidad 12: Exportación de experiencias desde la app
+- [ ] T12.1 Botón «Exportar experiencias» que genere JSONL con el esquema del vault.
+- [ ] T12.2 Compartir/guardar con el selector del sistema y nombre con fecha.
+- [ ] T12.3 Validar el esquema antes de exportar y avisar registros incompletos.
+- [ ] T12.4 Consentimiento y aviso de privacidad antes de exportar.
+- [ ] T12.5 Particionar o comprimir si el archivo supera el tamaño acordado.
+
+### Funcionalidad 13: Ciclo de aprendizaje (importar → entrenar → desplegar)
+- [x] T13.1 `scripts/import_experiences.py` para convertir experiencias en dataset SFT.
+- [ ] T13.2 Versionar datasets y GGUF (fecha/hash) para poder revertir.
+- [ ] T13.3 Pipeline DPO con `rejected_alternative`.
+- [ ] T13.4 Prueba de regresión de personalidad tras cada reentrenamiento.
+
 ## Fase 3: Requisitos no funcionales (transversal)
 
 ### Funcionalidad 6: RNF
