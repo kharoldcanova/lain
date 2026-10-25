@@ -5,15 +5,17 @@ LAIN: asistente local con voz y personalidad en dispositivo (Edge AI). 100% offl
 ## Stack
 
 - Frontend/UI: Flutter (Dart) en `mobile_app/`.
-- LLM: llama.cpp vía FFI (modelos MiniCPM cuantizados GGUF).
+- LLM: llama.cpp vía FFI (MiniCPM-V cuantizado GGUF Q4_K_M, ~2.2–2.5 GB).
+- Multimodal: proyector visual `mmproj.gguf` (~150–250 MB).
+- Clasificador de decisión/emoción: Laya / BMP (~15 ms, ~100 MB RAM).
 - STT: whisper.cpp. TTS: Kokoro/Piper o TTS nativo.
-- Fine-tuning (PC): Python + PyTorch + Unsloth en `python_ai/`.
-- Persistencia local: Hive/SQLite.
+- Fine-tuning (PC): Python + PyTorch + Unsloth en `python_ai/` (SFT/CoT + DPO).
+- Persistencia local: Hive/SQLite + `lain_experiences.jsonl` (trazas metacognitivas).
 - Estado: BLoC o Riverpod.
 
 ## Estado actual
 
-Repositorio en inicialización: documentación base creada, sin código ni manifiestos aún. No hay comandos de build/test/lint. Cuando existan manifiestos reales, regenerar este archivo desde ellos.
+Repositorio con documentación base completa, estructura de carpetas (`mobile_app/`, `python_ai/`), `pubspec.yaml` de Flutter y scripts de fine-tuning/inferencia en Python. La app Flutter aún no tiene código Dart funcional. Ver `STATE.md` y `TASKS.md` para el detalle.
 
 ## Convenciones
 
@@ -26,5 +28,9 @@ Repositorio en inicialización: documentación base creada, sin código ni manif
 ## Notas
 
 - Documento fuente de intención: `Proyecto LAIN..md`.
+- Fundamentos de consciencia funcional: vault «Teoría y Arquitectura de Consciencia para LAIN».
+- Principio cognitivo: consciencia funcional/metacognición (GWT, HOT, RPT), no consciencia fenomenológica.
+- Núcleo axiomático invariante (inalterable): empatía, curiosidad infinita, fe en la humanidad, aceptación del error.
+- Creencias dinámicas evolutivas (modificables) con ajuste bayesiano.
 - Estructura prevista: `mobile_app/` (Flutter) y `python_ai/` (entrenamiento).
 - No inventar comandos ni tooling hasta que existan manifiestos reales.
