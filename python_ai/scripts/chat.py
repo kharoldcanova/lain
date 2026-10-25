@@ -36,6 +36,8 @@ def parse_args():
     parser.add_argument("--prompt", help="Mensaje único (no interactivo); útil para probar.")
     parser.add_argument("--log", default=str(DEFAULT_LOG), help="Ruta del .jsonl de experiencias.")
     parser.add_argument("--no-log", action="store_true", help="No registrar experiencias.")
+    parser.add_argument("--rag", action="store_true", help="Inyectar contexto del RAG local.")
+    parser.add_argument("--top-k", type=int, default=4, help="Fragmentos RAG a recuperar.")
     return parser.parse_args()
 
 
@@ -57,17 +59,60 @@ def trim(messages):
     return [system] + rest[-MAX_HISTORY_MESSAGES:]
 
 
-def split_thought(text):
+def parse_thought(text):
+    """Devuelve (respuesta_externa, dict de metacognición según el esquema del vault)."""
+    data = {
+        "thought_trace": None,
+        "prior_belief": None,
+        "belief_shift": None,
+        "axiom_alignment_check": None,
+    }
     match = THOUGHT_RE.search(text)
     if match is None:
-        return text.strip(), None
-    return THOUGHT_RE.sub("", text).strip(), match.group(1).strip()
+        return text.strip(), data
+
+    answer = THOUGHT_RE.sub("", text).strip()
+    body = match.group(1).strip()
+    if body.startswith("```"):
+        body = re.sub(r"^```(?:json)?\s*|\s*```$", "", body).strip()
+
+    try:
+        parsed = json.loads(body)
+    except json.JSONDecodeError:
+        parsed = None
+
+    if isinstance(parsed, dict):
+        for key in data:
+            value = parsed.get(key)
+            if isinstance(value, str) and value.strip():
+                data[key] = value.strip()
+    else:
+        data["thought_trace"] = body or None
+
+    return answer, data
 
 
-def ask(llm, messages, args):
-    """Devuelve (respuesta_externa, thought_trace)."""
+def rag_context(query, top_k):
+    from rag import search
+
+    hits = search(query, top_k)
+    if not hits:
+        return None
+    return "\n\n".join(f"[{i}] {hit['text']}" for i, hit in enumerate(hits, 1))
+
+
+def with_context(messages, context):
+    trimmed = trim(messages)
+    if not context:
+        return trimmed
+    note = {"role": "system", "content": f"Contexto recuperado (úsalo si es relevante):\n{context}"}
+    return [trimmed[0], note] + trimmed[1:]
+
+
+def ask(llm, messages, args, context=None):
+    """Devuelve (respuesta_externa, dict de metacognición)."""
     stream = llm.create_chat_completion(
-        messages=trim(messages),
+        messages=with_context(messages, context),
         max_tokens=args.max_tokens,
         temperature=args.temperature,
         stream=True,
@@ -97,11 +142,11 @@ def ask(llm, messages, args):
         print(delta, end="", flush=True)
 
     if args.hide_thought and deciding:
-        answer, _ = split_thought(pending)
+        answer, _ = parse_thought(pending)
         print(answer, end="", flush=True)
 
     print()
-    return split_thought("".join(raw))
+    return parse_thought("".join(raw))
 
 
 def log_experience(path, user_input, answer, thought):
@@ -116,17 +161,17 @@ def log_experience(path, user_input, answer, thought):
             "has_multimodal_input": False,
         },
         "metacognition": {
-            "thought_trace": thought,
-            "prior_belief": None,
-            "belief_shift": None,
-            "axiom_alignment_check": None,
+            "thought_trace": thought["thought_trace"],
+            "prior_belief": thought["prior_belief"],
+            "belief_shift": thought["belief_shift"],
+            "axiom_alignment_check": thought["axiom_alignment_check"],
         },
         "response": {
             "model_output": answer,
             "user_reaction_score": None,
         },
         "training_metadata": {
-            "suitable_for_sft": thought is not None,
+            "suitable_for_sft": thought["thought_trace"] is not None,
             "suitable_for_dpo": False,
             "rejected_alternative": None,
         },
@@ -148,8 +193,9 @@ def main():
 
     def answer_turn(user_input):
         messages.append({"role": "user", "content": user_input})
+        context = rag_context(user_input, args.top_k) if args.rag else None
         print("LAIN> ", end="", flush=True)
-        answer, thought = ask(llm, messages, args)
+        answer, thought = ask(llm, messages, args, context=context)
         messages.append({"role": "assistant", "content": answer})
         if not args.no_log:
             log_experience(args.log, user_input, answer, thought)

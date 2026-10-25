@@ -63,6 +63,7 @@ python_ai/outputs/
 python_ai/outputs_gguf/
 python_ai/unsloth_compiled_cache/
 python_ai/experiences/
+python_ai/rag/
 
 # Entornos y secretos
 .env
