@@ -61,6 +61,12 @@ Verificar la estabilidad del formato (20 prompts, exige ≥90 % de JSON válido 
 python scripts/check_format.py
 ```
 
+Validar el dataset antes de entrenar (contrato `<think>` + JSON de cuatro claves):
+
+```bash
+python scripts/validate_dataset.py
+```
+
 ## Importar experiencias exportadas por la app
 
 La app exporta `lain_experiences.jsonl` (esquema del vault). Para incorporarlas al dataset:
