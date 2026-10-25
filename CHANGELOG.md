@@ -9,6 +9,8 @@
 - Entorno Python base en `python_ai/` (requirements.txt, README.md, carpetas).
 - Commit inicial del repositorio.
 - T5.1 Entorno Python base completado.
+- `python_ai/README.md`: sección «Qué contiene realmente el modelo entrenado» explicando que el GGUF guarda pesos y no el dataset, qué es cada artefacto de `outputs/` y el riesgo de memorización.
+- `python_ai/scripts/chat.py`: chat manual con historial, streaming, `--hide-thought` y registro por turno en `experiences/lain_experiences.jsonl` con el esquema del vault (context/metacognition/response/training_metadata).
 
 ### Changed
 - Reescrita la concepción del proyecto a partir del vault de Obsidian «Teoría y Arquitectura de Consciencia para LAIN».
