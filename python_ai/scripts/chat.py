@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument("--n-ctx", type=int, default=4096)
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--temperature", type=float, default=0.7)
-    parser.add_argument("--hide-thought", action="store_true", help="Oculta el bloque <thought>.")
+    parser.add_argument("--hide-thought", action="store_true", help="Oculta el bloque <think>.")
     parser.add_argument("--prompt", help="Mensaje único (no interactivo); útil para probar.")
     parser.add_argument("--log", default=str(DEFAULT_LOG), help="Ruta del .jsonl de experiencias.")
     parser.add_argument("--no-log", action="store_true", help="No registrar experiencias.")
