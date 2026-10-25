@@ -61,6 +61,7 @@ env
 mobile_app/assets/models/
 python_ai/outputs/
 python_ai/outputs_gguf/
+python_ai/unsloth_compiled_cache/
 
 # Entornos y secretos
 .env
