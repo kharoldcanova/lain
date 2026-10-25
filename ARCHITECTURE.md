@@ -5,12 +5,12 @@
 1. **Local-First & Privacy-Centric:** Ningún dato personal o de conversación sale del dispositivo móvil. La única salida a red es la descarga explícita de contenido para el RAG (con consentimiento y allowlist); la inferencia nunca llama a la red.
 2. **Desacoplamiento de Componentes:** La UI (Flutter) está completamente aislada de la lógica de procesamiento pesado mediante capas de abstracción y FFI.
 3. **Optimización de Recursos (Edge AI):** Uso intensivo de modelos cuantizados (GGUF) y liberación proactiva de memoria RAM tras finalizar los ciclos de inferencia.
-4. **Consciencia Funcional / Metacognición:** El sistema implementa mecanismos de orden superior (trazas `<thought>`, ajuste bayesiano de creencias, Teoría de la Mente) sin consciencia fenomenológica.
+4. **Consciencia Funcional / Metacognición:** El sistema implementa mecanismos de orden superior (trazas `<think>`, ajuste bayesiano de creencias, Teoría de la Mente) sin consciencia fenomenológica.
 
 ## Marcos teóricos aplicados
 
 - **GWT (Global Workspace Theory):** La interacción entre Whisper (STT), Laya/BMP (clasificador), memoria (SQLite/Hive) y MiniCPM-V (llama.cpp) emula la transmisión de datos a través de un espacio de trabajo global.
-- **HOT (Higher-Order Theories):** El bloque `<thought>` genera monitoreo interno sobre intención emocional, incertidumbre y sesgos antes de la respuesta externa.
+- **HOT (Higher-Order Theories):** El bloque `<think>` genera monitoreo interno sobre intención emocional, incertidumbre y sesgos antes de la respuesta externa.
 - **RPT (Recurrent Processing Theory):** Laya/BMP evalúa el impacto de una respuesta previa y ajusta la traza de razonamiento antes de responder (bucles recurrentes).
 
 ## Capacidades metacognitivas
@@ -21,7 +21,7 @@
 
 ## Percepción multimodal
 
-- Percepción visual con MiniCPM-V: parches visuales codificados vía proyector CLIP/mmproj y unidos al espacio de embeddings del LLM, permitiendo que `<thought>` reflexione sobre estímulos visuales reales.
+- Percepción visual con MiniCPM-V: parches visuales codificados vía proyector CLIP/mmproj y unidos al espacio de embeddings del LLM, permitiendo que `<think>` reflexione sobre estímulos visuales reales.
 
 ## Memoria semántica (RAG local)
 
@@ -36,7 +36,7 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
 
 - **Núcleo Axiomático Invariante (inalterable):** búsqueda de empatía, curiosidad infinita, fe en la humanidad, aceptación del error como aprendizaje.
 - **Creencias Dinámicas Evolutivas (modificables):** opiniones sobre hechos, conceptos filosóficos, entorno del usuario.
-- **Ajuste Bayesiano:** ante contradicción/error, evaluar evidencia en `<thought>`, cuestionar internamente, evolucionar criterio sin perder el núcleo.
+- **Ajuste Bayesiano:** ante contradicción/error, evaluar evidencia en `<think>`, cuestionar internamente, evolucionar criterio sin perder el núcleo.
 - **Human-in-the-Loop:** el usuario es fuente de experiencias; cada corrección activa un ciclo metacognitivo.
 
 ## Arquitectura de Capas
@@ -64,7 +64,7 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
 ┌───────────────────────────────────────────────────────────┐
 │ 2. Inferencia Multimodal en MiniCPM-V / llama.cpp         │
 │    - Procesa parches de imagen (mmproj) + audio (Whisper)  │
-│    - Generación de bloque <thought> (HOT / Metacognición)  │
+│    - Generación de bloque <think> (HOT / Metacognición)  │
 │    - Evaluación de incertidumbre y posición empática      │
 │    - Ajuste de creencias si hay contradicción/aprendizaje │
 └─────────────────────────┬─────────────────────────────────┘

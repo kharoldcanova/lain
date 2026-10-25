@@ -31,7 +31,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T1.3 Cargar modelo MiniCPM-V GGUF desde almacenamiento local.
 - [ ] T1.4 Inyectar System Prompt dinámico para personalidad en español.
 - [ ] T1.5 Implementar streaming de tokens (Time to First Token < 2s).
-- [ ] T1.6 Generar y procesar el bloque de pensamiento `<thought>` antes de la respuesta externa.
+- [ ] T1.6 Generar y procesar el bloque de pensamiento `<think>` antes de la respuesta externa.
 
 ### Funcionalidad 2: Reconocimiento de voz a texto (STT)
 - [ ] T2.1 Capturar audio del micrófono en Flutter.
@@ -62,7 +62,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T9.1 Cargar el proyector visual `mmproj.gguf` en llama.cpp.
 - [ ] T9.2 Capturar imágenes/fotogramas de la cámara en Flutter.
 - [ ] T9.3 Codificar parches visuales e integrarlos al espacio de embeddings del LLM.
-- [ ] T9.4 Permitir que `<thought>` reflexione sobre estímulos visuales.
+- [ ] T9.4 Permitir que `<think>` reflexione sobre estímulos visuales.
 
 ### Funcionalidad 10: Conocimiento local (RAG)
 - [x] T10.1 Script RAG en PC: ingesta, chunking, embeddings y SQLite (`scripts/rag.py`).
@@ -75,7 +75,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 
 ### Funcionalidad 11: Modelo local pequeño con buen español (investigación)
 - [ ] T11.1 Evaluar candidatos pequeños con español fuerte (Salamandra-2B-Instruct, EuroLLM-1.7B, Qwen3-1.7B, Gemma-3-1B) verificando soporte en Unsloth y licencia.
-- [ ] T11.2 Construir un set corto de evaluación en español: fluidez, coherencia, seguimiento de instrucciones y `<thought>` JSON válido.
+- [ ] T11.2 Construir un set corto de evaluación en español: fluidez, coherencia, seguimiento de instrucciones y `<think>` JSON válido.
 - [ ] T11.3 Medir el modelo actual (MiniCPM5-2B) contra los candidatos y registrar resultados.
 - [ ] T11.4 Elegir el modelo base y adaptar `finetune.py` / `infer.py`.
 - [ ] T11.5 Documentar la decisión, licencia y tamaño en RAM/GGUF.
@@ -101,4 +101,4 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T6.2 Validar consumo de RAM < 3.5 GB (incluyendo MiniCPM-V + mmproj + Laya/BMP).
 - [ ] T6.3 Compilar correctamente en ARM64 (Android).
 - [ ] T6.4 Asegurar privacidad total de datos.
-- [ ] T6.5 Validar el flujo metacognitivo completo (entrada → Laya/BMP → `<thought>` → salida → `.jsonl`) sin superar latencia objetivo.
+- [ ] T6.5 Validar el flujo metacognitivo completo (entrada → Laya/BMP → `<think>` → salida → `.jsonl`) sin superar latencia objetivo.

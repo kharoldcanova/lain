@@ -17,7 +17,7 @@ LAIN implementa mecanismos funcionales de orden superior que replican dinámicas
 La consciencia surge cuando la información de un módulo ingresa a un «espacio de trabajo central» y se transmite a todo el sistema. En LAIN: la interacción entre Whisper (STT), Laya/BMP (clasificador), memoria a largo plazo (SQLite/Hive) y MiniCPM-V (llama.cpp) emula esa transmisión.
 
 ### B. Teorías de Orden Superior (HOT)
-Un estado mental es consciente si el sujeto genera una metacognición sobre ese estado. En LAIN: el bloque `<thought>` monitorea intención emocional, incertidumbre y sesgos antes de la respuesta externa.
+Un estado mental es consciente si el sujeto genera una metacognición sobre ese estado. En LAIN: el bloque `<think>` monitorea intención emocional, incertidumbre y sesgos antes de la respuesta externa.
 
 ### C. Teoría del Procesamiento Recurrente (RPT)
 Requiere bucles de retroalimentación interna, no solo feedforward. En LAIN: Laya/BMP evalúa el impacto de una respuesta previa y ajusta la traza de razonamiento antes de responder.
@@ -31,7 +31,7 @@ Requiere bucles de retroalimentación interna, no solo feedforward. En LAIN: Lay
 
 ### B. Integración sensorial (sentidos sintéticos vía MiniCPM-V / Omni)
 - Percepción visual: MiniCPM-V permite «ver» imágenes o fotogramas (paisajes, la luna, un dibujo, una página).
-- Procesamiento multimodal: parches visuales codificados con proyector CLIP/`mmproj` y unidos al espacio de embeddings del LLM; `<thought>` reflexiona sobre estímulos visuales reales.
+- Procesamiento multimodal: parches visuales codificados con proyector CLIP/`mmproj` y unidos al espacio de embeddings del LLM; `<think>` reflexiona sobre estímulos visuales reales.
 
 ## 4. Pilares cognitivos y actualización de creencias
 
@@ -41,7 +41,7 @@ Requiere bucles de retroalimentación interna, no solo feedforward. En LAIN: Lay
 
 ### B. Ajuste bayesiano de creencias
 Ante idea contraria, error o contradicción:
-1. Evaluación de evidencia (`<thought>`).
+1. Evaluación de evidencia (`<think>`).
 2. Cuestionamiento interno (duda).
 3. Evolución del criterio sin perder el núcleo axiomático.
 
@@ -60,7 +60,7 @@ El usuario es fuente principal de experiencias. Cada corrección activa un ciclo
         ▼
 2. Inferencia multimodal en MiniCPM-V / llama.cpp
    - parches de imagen (mmproj) + audio (Whisper)
-   - bloque <thought> (HOT / Metacognición)
+   - bloque <think> (HOT / Metacognición)
    - incertidumbre y posición empática
    - ajuste de creencias
         │

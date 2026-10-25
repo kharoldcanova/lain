@@ -27,7 +27,7 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 - Núcleo Axiomático Invariante (inalterable): empatía, curiosidad infinita, fe en la humanidad, aceptación del error.
 - Creencias Dinámicas Evolutivas (modificables): opiniones sobre hechos/conceptos/entorno.
 - Ajuste Bayesiano de creencias ante contradicción o nueva evidencia.
-- Trazas de pensamiento `<thought>` (metacognición) previas a la respuesta externa.
+- Trazas de pensamiento `<think>` (metacognición) previas a la respuesta externa.
 - Human-in-the-Loop: el usuario aporta experiencias que redefinen la visión del modelo.
 
 ## Restricciones de memoria
@@ -113,7 +113,7 @@ python scripts/import_experiences.py --input ~/Descargas/lain_experiences.jsonl 
 python scripts/import_experiences.py --input ~/Descargas/lain_experiences.jsonl
 ```
 
-Valida `suitable_for_sft`, exige los cuatro campos de `<thought>`, evita duplicados y agrega los pares a `datasets/personality_es.jsonl`.
+Valida `suitable_for_sft`, exige los cuatro campos de `<think>`, evita duplicados y agrega los pares a `datasets/personality_es.jsonl`.
 
 ### 3. Entrenamiento
 

@@ -7,7 +7,7 @@ Fase 1 completada. Siguiente: Fase 2 — conexión con la app Flutter (T1.1).
 Iniciar la integración Flutter ↔ llama.cpp con el modelo GGUF ya entrenado y validado.
 
 ## Concepción vigente
-LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia funcional (no fenomenológica): GWT, HOT (`<thought>`), RPT, percepción multimodal (MiniCPM-V + mmproj) y ajuste bayesiano de creencias sobre un núcleo axiomático invariante.
+LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia funcional (no fenomenológica): GWT, HOT (`<think>`), RPT, percepción multimodal (MiniCPM-V + mmproj) y ajuste bayesiano de creencias sobre un núcleo axiomático invariante.
 
 ## Zonas frágiles
 - Consumo de RAM: MiniCPM-V Q4_K_M (~2.2–2.5 GB) + mmproj (~150–250 MB) + Laya/BMP (~100 MB) debe mantenerse < 3.5 GB (RNF03).
@@ -30,4 +30,4 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 ## Próximos pasos
 - Ampliar `personality_es.jsonl` antes de una corrida de producción (evitar sobreajuste).
 - Fase 2: T1.1 configurar Flutter y T1.2 puente FFI para llama.cpp con el GGUF actual.
-- Nuevas líneas (ver TASKS.md): enrutador Laya/BMP, multimodalidad MiniCPM-V, trazas `<thought>`, persistencia `lain_experiences.jsonl` y ciclo SFT/CoT + DPO.
+- Nuevas líneas (ver TASKS.md): enrutador Laya/BMP, multimodalidad MiniCPM-V, trazas `<think>`, persistencia `lain_experiences.jsonl` y ciclo SFT/CoT + DPO.

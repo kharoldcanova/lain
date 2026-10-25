@@ -44,16 +44,22 @@ Chat manual (con historial y registro de experiencias):
 
 ```bash
 python scripts/chat.py                 # interactivo
-python scripts/chat.py --hide-thought  # oculta la traza <thought>
+python scripts/chat.py --hide-thought  # oculta la traza <think>
 python scripts/chat.py --prompt "Hola" --no-log
 ```
 
 Cada turno se agrega a `experiences/lain_experiences.jsonl` con el esquema del vault:
 `context` (Laya), `metacognition`, `response` y `training_metadata`.
-El bloque `<thought>` debe ser un JSON válido con `thought_trace`, `prior_belief`, `belief_shift` y
+El bloque `<think>` debe ser un JSON válido con `thought_trace`, `prior_belief`, `belief_shift` y
 `axiom_alignment_check`; `chat.py` lo parsea y rellena esos campos. Si el modelo no devuelve JSON válido,
 usa el texto completo como `thought_trace`. Los campos que dependen de Laya/BMP o del feedback del usuario
 (`laya_decision`, `user_reaction_score`, `rejected_alternative`) quedan en `null`.
+
+Verificar la estabilidad del formato (20 prompts, exige ≥90 % de JSON válido y cero bloques sin cerrar):
+
+```bash
+python scripts/check_format.py
+```
 
 ## Importar experiencias exportadas por la app
 

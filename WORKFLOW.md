@@ -10,7 +10,7 @@ LAIN tiene **dos memorias** que no se mezclan:
 
 | Memoria | Dónde vive | Qué guarda | Cómo se actualiza |
 |---|---|---|---|
-| **Pesos** (modelo) | `.gguf` en el celular | estilo, tono, personalidad, formato de `<thought>` | reentrenamiento (SFT/DPO) en la PC |
+| **Pesos** (modelo) | `.gguf` en el celular | estilo, tono, personalidad, formato de `<think>` | reentrenamiento (SFT/DPO) en la PC |
 | **Semántica** (RAG) | SQLite en el celular | hechos, documentos, conceptos descargados | indexar; sin reentrenar |
 
 Regla práctica:
@@ -22,7 +22,7 @@ Regla práctica:
 ```text
 ┌──────────────── CELULAR (runtime, offline) ────────────────┐
 │ voz/texto/cámara → STT → Laya/BMP → RAG top-k → prompt     │
-│      → MiniCPM-V (llama.cpp) → <thought> JSON + respuesta  │
+│      → MiniCPM-V (llama.cpp) → <think> JSON + respuesta  │
 │      → TTS → registro lain_experiences.jsonl               │
 └───────────────────────────┬────────────────────────────────┘
                             │ exportar JSONL
@@ -65,16 +65,18 @@ Es el entrenamiento principal. Le muestra al modelo pares **entrada → salida c
 
 ```json
 {"instruction": "¿Qué opinas de la IA y los sentimientos?",
- "response": "<thought>\n{...JSON...}\n</thought>\nYo no tengo un cuerpo que sienta..."}
+ "response": "<think>\n{...JSON...}\n</thought>\nYo no tengo un cuerpo que sienta..."}
 ```
 
 Qué aprende:
 
-- El **formato** de `<thought>` con JSON.
+- El **formato** de `<think>` con JSON.
 - El **tono y estilo** de LAIN.
 - Cómo estructurar una respuesta empática.
 
 Qué **no** aprende de forma fiable: hechos nuevos. El conocimiento queda congelado al momento del entrenamiento.
+
+> El vault conceptual lo llama `<thought>`; el modelo usa su tag nativo `<think>` porque su plantilla de chat solo reconoce ese. El parser de `chat.py` acepta ambos.
 
 ### 2.3 DPO (Direct Preference Optimization)
 
@@ -119,7 +121,7 @@ python scripts/import_experiences.py --input ~/Descargas/lain_experiences.jsonl
 
 ### 2.6 Prueba — `scripts/chat.py` / `scripts/infer.py`
 
-- `infer.py`: una pregunta, salida limpia (sin `<thought>`).
+- `infer.py`: una pregunta, salida limpia (sin `<think>`).
 - `chat.py`: conversación interactiva, historial, `--rag`, `--hide-thought`, y registro automático en `experiences/lain_experiences.jsonl`.
 
 ---
@@ -133,7 +135,7 @@ Ubicación: `mobile_app/` (Flutter). **Estado actual: estructura creada, sin có
 1. **Entrada**: texto, micrófono (`whisper.cpp`) o cámara (`mmproj` + MiniCPM-V).
 2. **Laya/BMP (~15 ms)**: clasifica carga emocional e intención y elige la directriz de tono.
 3. **RAG**: convierte la consulta en embedding, recupera los `top-k` fragmentos de SQLite e inyecta el contexto.
-4. **Inferencia**: `llama.cpp` genera primero el bloque `<thought>` (JSON de metacognición) y luego la respuesta.
+4. **Inferencia**: `llama.cpp` genera primero el bloque `<think>` (JSON de metacognición) y luego la respuesta.
 5. **Salida**: texto en pantalla y voz por TTS, en streaming por oraciones.
 6. **Registro**: guarda la experiencia en `lain_experiences.jsonl` desde un isolate en segundo plano.
 
@@ -154,7 +156,7 @@ La app tendrá un botón **Exportar experiencias** que genera el JSONL para comp
 ```text
 1. Usuario conversa en la app
         ↓
-2. App registra experiencia (JSONL con <thought>, creencias, respuesta)
+2. App registra experiencia (JSONL con <think>, creencias, respuesta)
         ↓
 3. Usuario pulsa "Exportar experiencias"
         ↓
@@ -186,7 +188,7 @@ URL/archivo → rag.py ingest → SQLite → disponible al instante
 | **Riesgo** | olvido catastrófico | sobreajuste a pocos pares | contexto irrelevante si el chunk es malo |
 | **Latencia** | ninguna en runtime | ninguna en runtime | decenas de ms por consulta |
 
-Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SFT**. El razonamiento previo (`<thought>`) es estilo **CoT** (*Chain of Thought*) y va dentro del SFT.
+Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SFT**. El razonamiento previo (`<think>`) es estilo **CoT** (*Chain of Thought*) y va dentro del SFT.
 
 ---
 
@@ -195,7 +197,7 @@ Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SF
 | Ruta | Qué es | ¿Va a git? |
 |---|---|---|
 | `python_ai/datasets/personality_es.jsonl` | dataset SFT | sí |
-| `python_ai/datasets/system_prompt.txt` | personalidad y contrato de `<thought>` | sí |
+| `python_ai/datasets/system_prompt.txt` | personalidad y contrato de `<think>` | sí |
 | `python_ai/outputs/*.gguf` | modelo final | no |
 | `python_ai/outputs/checkpoint-N/` | adaptador y estado | no |
 | `python_ai/experiences/lain_experiences.jsonl` | experiencias de prueba en PC | no |
@@ -211,7 +213,7 @@ Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SF
 | Entorno Python + Unsloth | ✅ |
 | Fine-tuning SFT + export GGUF | ✅ validado |
 | Inferencia (`infer.py`, `chat.py`) | ✅ |
-| `<thought>` en JSON | ⚠️ inestable con 7 ejemplos: el modelo alterna con el `<think>` nativo. Pendiente unificar tag y ampliar dataset |
+| `<think>` en JSON | ⚠️ inestable con 7 ejemplos: el modelo alterna con el `<think>` nativo. Pendiente unificar tag y ampliar dataset |
 | RAG local (PC) | ✅ |
 | Importador de experiencias | ✅ |
 | DPO | ⏳ T13.3 |
@@ -227,7 +229,7 @@ Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SF
 - **GGUF**: formato de modelo cuantizado para llama.cpp.
 - **QLoRA**: fine-tuning de bajo rango sobre un modelo base en 4 bits.
 - **SFT**: entrenamiento supervisado con pares entrada/salida.
-- **CoT**: cadena de pensamiento; aquí, el bloque `<thought>`.
+- **CoT**: cadena de pensamiento; aquí, el bloque `<think>`.
 - **DPO**: ajuste por preferencias (preferida vs rechazada).
 - **RAG**: recuperar fragmentos y añadirlos al prompt, sin reentrenar.
 - **Embedding**: vector que representa el significado de un texto.
