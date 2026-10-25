@@ -136,7 +136,7 @@ def ask(llm, messages, args, context=None):
                 pending, deciding = "", False
             elif "</think>" in pending or "</thought>" in pending:
                 rest = re.split(r"</think>|</thought>", pending, maxsplit=1)[1]
-                print(rest, end="", flush=True)
+                print(rest.lstrip("\n"), end="", flush=True)
                 pending, deciding = "", False
             continue
         print(delta, end="", flush=True)
