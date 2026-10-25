@@ -1,0 +1,11 @@
+# Dependencias de fine-tuning (GPU NVIDIA / CUDA)
+# Instalar con: uv pip install -r requirements.txt
+# Unsloth requiere GPU NVIDIA (CUDA >= 7.0) y Python 3.10-3.12.
+torch
+unsloth
+transformers
+datasets
+accelerate
+peft
+bitsandbytes
+trl

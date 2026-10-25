@@ -60,6 +60,7 @@ env
 *.onnx
 mobile_app/assets/models/
 python_ai/outputs/
+python_ai/outputs_gguf/
 
 # Entornos y secretos
 .env

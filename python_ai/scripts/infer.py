@@ -2,19 +2,33 @@
 
 from pathlib import Path
 
+import torch  # noqa: F401  (carga libcudart antes que llama_cpp)
 from llama_cpp import Llama
 
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "outputs"
-MODEL_PATH = next(OUTPUT_DIR.glob("*.gguf"), None)
 SYSTEM_PROMPT = (Path(__file__).resolve().parents[1] / "datasets" / "system_prompt.txt").read_text().strip()
+PROMPT = "Hola, ¿cómo estás?"
 
 
 def main():
-    llm = Llama(model_path=str(MODEL_PATH), n_ctx=2048, n_gpu_layers=-1, verbose=False)
+    model_path = next(OUTPUT_DIR.glob("*.gguf"), None)
+    if model_path is None:
+        raise SystemExit(f"No se encontró ningún .gguf en {OUTPUT_DIR}")
 
-    prompt = f"<|system|>\n{SYSTEM_PROMPT}\n<|user|>\nHola, ¿cómo estás?\n<|assistant|>\n"
-    output = llm(prompt, max_tokens=128, stop=["<|user|>"], echo=False)
-    print(output["choices"][0]["text"].strip())
+    llm = Llama(model_path=str(model_path), n_ctx=2048, n_gpu_layers=-1, verbose=False)
+    output = llm.create_chat_completion(
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": PROMPT},
+        ],
+        max_tokens=512,
+        temperature=0.7,
+    )
+    text = output["choices"][0]["message"]["content"].strip()
+    for closing in ("</thought>", "</think>"):
+        if closing in text:
+            text = text.split(closing, 1)[1].strip()
+    print(text)
 
 
 if __name__ == "__main__":

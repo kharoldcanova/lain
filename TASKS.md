@@ -8,8 +8,10 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [x] T5.1 Crear entorno Python en `python_ai/` con dependencias (torch, unsloth, transformers).
 - [x] T5.2 Preparar dataset de personalidad en español (`personality_es.jsonl`).
 - [x] T5.3 Script de fine-tuning con Unsloth (`scripts/finetune.py`).
-- [ ] T5.4 Ejecutar fine-tuning en PC (GPU) y exportar GGUF.
+- [ ] T5.4 Ejecutar fine-tuning completo en PC (GPU) y exportar GGUF.
+  - [x] Pipeline validado con smoke test (1 paso + export GGUF Q4_K_M).
 - [ ] T5.5 Probar inferencia con `scripts/infer.py` (validar personalidad).
+  - [x] Inferencia funcional verificada sobre el GGUF exportado.
 - [ ] T5.6 Preparar dataset de trazas metacognitivas (`thought_trace`) para SFT/CoT.
 - [ ] T5.7 Preparar pares de preferencia para DPO (`rejected_alternative`).
 

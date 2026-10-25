@@ -15,3 +15,12 @@
 - README.md actualizado: nombre conceptual LOCAL ARTIFICIAL INTELIGENCE NEURONAL, consciencia funcional/metacognitiva, pilares cognitivos y restricciones de memoria (MiniCPM-V + mmproj + Laya/BMP).
 - ARCHITECTURE.md actualizado: marcos teóricos (GWT, HOT, RPT), capacidades metacognitivas, percepción multimodal, núcleo axiomático y ajuste bayesiano de creencias, flujo metacognitivo de 4 pasos y ciclo de reentrenamiento offline (`.jsonl` + SFT/CoT + DPO).
 - TASKS.md actualizado con funcionalidades de consciencia funcional, multimodalidad y persistencia de experiencias.
+- `finetune.py` migrado a la API actual de Unsloth/TRL (`SFTConfig`, `processing_class`), modelo por defecto `openbmb/MiniCPM5-2B`, argumentos CLI (`--max-steps`, `--skip-hf`, `--no-export`) y movimiento del GGUF a `outputs/`.
+- `infer.py` usa el chat template del GGUF, valida la existencia del modelo y recorta el bloque de pensamiento.
+- `python_ai/README.md` con setup con `uv` (Python 3.12 + CUDA 12.6) y comandos de smoke test.
+- `.gitignore` incluye `python_ai/outputs_gguf/`.
+
+### Verified
+- Smoke test de fine-tuning: 1 paso, loss 3.004, 30 s en RTX 3050 6 GB.
+- Export GGUF Q4_K_M correcto (`MiniCPM5-2B.Q4_K_M.gguf`, 1.5 GB).
+- Inferencia con `llama-cpp-python` sobre el GGUF exportado: respuesta en español.
