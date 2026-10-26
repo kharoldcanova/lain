@@ -22,7 +22,7 @@ Regla práctica:
 ```text
 ┌──────────────── CELULAR (runtime, offline) ────────────────┐
 │ voz/texto/cámara → STT → Laya/BMP → RAG top-k → prompt     │
-│      → MiniCPM-V (llama.cpp) → <think> JSON + respuesta    │
+│      → Qwen2.5-3B (llama.cpp) → <think> JSON + respuesta   │
 │      → TTS → registro lain_experiences.jsonl               │
 └───────────────────────────┬────────────────────────────────┘
                             │ exportar JSONL
@@ -44,18 +44,18 @@ Ubicación: `python_ai/`.
 
 ### 2.1 Fine-tuning — `scripts/finetune.py`
 
-Entrena un adaptador QLoRA sobre MiniCPM5-2B con Unsloth:
+Entrena un adaptador QLoRA sobre Qwen2.5-3B-Instruct con Unsloth:
 
 1. Carga el modelo base en 4 bits.
 2. Aplica LoRA solo a las capas de atención/MLP (~1 % de parámetros entrenables).
-3. Construye el dataset: ejemplos locales (`personality_es.jsonl`) + opcionalmente un corpus general.
+3. Construye el dataset solo con los ejemplos locales de `personality_es.jsonl` (sin corpus general).
 4. Entrena con SFT.
 5. Fusiona el adaptador, convierte a GGUF y cuantiza a `Q4_K_M` en `outputs/`.
 
 Comandos:
 
 ```bash
-python scripts/finetune.py --max-steps 1 --skip-hf --no-export   # smoke test
+python scripts/finetune.py --max-steps 1 --no-export            # smoke test
 python scripts/finetune.py --max-steps 60 --batch-size 1 --max-seq-length 1024
 ```
 
@@ -76,7 +76,7 @@ Qué aprende:
 
 Qué **no** aprende de forma fiable: hechos nuevos. El conocimiento queda congelado al momento del entrenamiento.
 
-> El vault conceptual lo llama `<thought>`; el modelo usa su tag nativo `<think>` porque su plantilla de chat solo reconoce ese. El parser de `chat.py` acepta ambos.
+> El vault conceptual lo llama `<thought>`; LAIN usa `<think>`. MiniCPM5 lo traía como tag nativo; Qwen2.5 usa ChatML y el bloque se aprende del system prompt y del dataset. El parser de `chat.py` acepta ambos.
 
 ### 2.3 DPO (Direct Preference Optimization)
 
@@ -134,7 +134,7 @@ Ubicación: `mobile_app/` (Flutter). **Estado actual: estructura creada, sin có
 
 ### 3.1 Flujo de una interacción
 
-1. **Entrada**: texto, micrófono (`whisper.cpp`) o cámara (`mmproj` + MiniCPM-V).
+1. **Entrada**: texto, micrófono (`whisper.cpp`) o cámara (`mmproj` + modelo de visión).
 2. **Laya/BMP (~15 ms)**: clasifica carga emocional e intención y elige la directriz de tono.
 3. **RAG**: convierte la consulta en embedding, recupera los `top-k` fragmentos de SQLite e inyecta el contexto.
 4. **Inferencia**: `llama.cpp` genera primero el bloque `<think>` (JSON de metacognición) y luego la respuesta.
@@ -213,9 +213,10 @@ Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SF
 | Pieza | Estado |
 |---|---|
 | Entorno Python + Unsloth | ✅ |
-| Fine-tuning SFT + export GGUF | ✅ validado |
-| Inferencia (`infer.py`, `chat.py`) | ✅ |
-| `<think>` en JSON | ✅ estable: 20/20 en `check_format.py` con 87 ejemplos |
+| Fine-tuning SFT + export GGUF | ✅ validado con MiniCPM5-2B (histórico) |
+| Modelo base | 🔄 Qwen2.5-3B-Instruct configurado, reentrenamiento pendiente (T11.6) |
+| Inferencia (`infer.py`, `chat.py`) | ✅ sirven cualquier GGUF de `outputs/` |
+| `<think>` en JSON | ✅ 20/20 con MiniCPM5; por medir en Qwen (T11.6) |
 | RAG local (PC) | ✅ |
 | Importador de experiencias | ✅ |
 | DPO | ⏳ T13.3 |

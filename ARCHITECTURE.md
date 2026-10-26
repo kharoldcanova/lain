@@ -9,7 +9,7 @@
 
 ## Marcos teóricos aplicados
 
-- **GWT (Global Workspace Theory):** La interacción entre Whisper (STT), Laya/BMP (clasificador), memoria (SQLite/Hive) y MiniCPM-V (llama.cpp) emula la transmisión de datos a través de un espacio de trabajo global.
+- **GWT (Global Workspace Theory):** La interacción entre Whisper (STT), Laya/BMP (clasificador), memoria (SQLite/Hive) y Qwen2.5-3B-Instruct (llama.cpp) emula la transmisión de datos a través de un espacio de trabajo global.
 - **HOT (Higher-Order Theories):** El bloque `<think>` genera monitoreo interno sobre intención emocional, incertidumbre y sesgos antes de la respuesta externa.
 - **RPT (Recurrent Processing Theory):** Laya/BMP evalúa el impacto de una respuesta previa y ajusta la traza de razonamiento antes de responder (bucles recurrentes).
 
@@ -21,7 +21,8 @@
 
 ## Percepción multimodal
 
-- Percepción visual con MiniCPM-V: parches visuales codificados vía proyector CLIP/mmproj y unidos al espacio de embeddings del LLM, permitiendo que `<think>` reflexione sobre estímulos visuales reales.
+- Percepción visual (pendiente, T9): base de visión prevista Qwen2.5-VL-3B-Instruct; los parches visuales se codifican vía proyector CLIP/mmproj y se unen al espacio de embeddings del LLM, permitiendo que `<think>` reflexione sobre estímulos visuales reales.
+- El modelo de texto (Qwen2.5-3B-Instruct) no es multimodal: la visión requiere cargar una base VL aparte o sustituir la base por Qwen2.5-VL-3B-Instruct y reentrenar.
 
 ## Memoria semántica (RAG local)
 
@@ -43,7 +44,7 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
 
 - **Capa de Presentación (Dart/Flutter):** Pantallas de chat, ajustes, gestión de estado con BLoC o Riverpod.
 - **Capa de Negocio / Dominio:** Casos de uso para historiales locales (Hive/SQLite), orquestación de prompts, persistencia de experiencias.
-- **Capa de Infraestructura / Nativos (C/C++ / FFI):** Enlaces directos a llama.cpp (MiniCPM-V) y whisper.cpp compilados como bibliotecas nativas (.so para Android); enrutador Laya/BMP.
+- **Capa de Infraestructura / Nativos (C/C++ / FFI):** Enlaces directos a llama.cpp (Qwen2.5-3B-Instruct) y whisper.cpp compilados como bibliotecas nativas (.so para Android); enrutador Laya/BMP.
 - **Capa de Apoyo Externo (Python - PC):** Scripts en Unsloth/PyTorch para SFT/CoT y DPO sobre trazas metacognitivas.
 
 ## Flujo metacognitivo (4 pasos)
@@ -62,8 +63,8 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
                           │
                           ▼
 ┌───────────────────────────────────────────────────────────┐
-│ 2. Inferencia Multimodal en MiniCPM-V / llama.cpp         │
-│    - Procesa parches de imagen (mmproj) + audio (Whisper)  │
+│ 2. Inferencia en Qwen2.5-3B-Instruct / llama.cpp          │
+│    - Procesa texto y audio (Whisper); visión en T9         │
 │    - Generación de bloque <think> (HOT / Metacognición)  │
 │    - Evaluación de incertidumbre y posición empática      │
 │    - Ajuste de creencias si hay contradicción/aprendizaje │

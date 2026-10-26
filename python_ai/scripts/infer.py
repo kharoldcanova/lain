@@ -5,13 +5,15 @@ from pathlib import Path
 import torch  # noqa: F401  (carga libcudart antes que llama_cpp)
 from llama_cpp import Llama
 
+from common import newest_gguf
+
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "outputs"
 SYSTEM_PROMPT = (Path(__file__).resolve().parents[1] / "datasets" / "system_prompt.txt").read_text().strip()
 PROMPT = "Hola, ¿cómo estás?"
 
 
 def main():
-    model_path = next(OUTPUT_DIR.glob("*.gguf"), None)
+    model_path = newest_gguf(OUTPUT_DIR)
     if model_path is None:
         raise SystemExit(f"No se encontró ningún .gguf en {OUTPUT_DIR}")
 

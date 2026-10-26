@@ -15,6 +15,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - [x] Inferencia funcional verificada sobre el GGUF exportado.
 - [ ] T5.6 Preparar dataset de trazas metacognitivas (`thought_trace`) para SFT/CoT.
 - [ ] T5.7 Preparar pares de preferencia para DPO (`rejected_alternative`).
+- [ ] T5.8 Reentrenar con Qwen2.5-3B-Instruct (solo `personality_es.jsonl`) y exportar GGUF Q4_K_M.
 
 ### Funcionalidad 7: Ciclo de reentrenamiento offline
 - [ ] T7.1 Definir y documentar el esquema `lain_experiences.jsonl`.
@@ -28,7 +29,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 ### Funcionalidad 1: Inferencia de texto local
 - [ ] T1.1 Configurar proyecto Flutter en `mobile_app/` con dependencias base.
 - [ ] T1.2 Integrar puente FFI para llama.cpp (bindings Dart ↔ C++).
-- [ ] T1.3 Cargar modelo MiniCPM-V GGUF desde almacenamiento local.
+- [ ] T1.3 Cargar el GGUF de Qwen2.5-3B-Instruct desde almacenamiento local.
 - [ ] T1.4 Inyectar System Prompt dinámico para personalidad en español.
 - [ ] T1.5 Implementar streaming de tokens (Time to First Token < 2s).
 - [ ] T1.6 Generar y procesar el bloque de pensamiento `<think>` antes de la respuesta externa.
@@ -59,10 +60,11 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T8.7 Registrar asíncronamente la experiencia en `lain_experiences.jsonl` (Background Isolate).
 
 ### Funcionalidad 9: Percepción multimodal
-- [ ] T9.1 Cargar el proyector visual `mmproj.gguf` en llama.cpp.
+- [ ] T9.1 Elegir la base de visión (previsto Qwen2.5-VL-3B-Instruct) y cargar su `mmproj.gguf` en llama.cpp.
 - [ ] T9.2 Capturar imágenes/fotogramas de la cámara en Flutter.
 - [ ] T9.3 Codificar parches visuales e integrarlos al espacio de embeddings del LLM.
 - [ ] T9.4 Permitir que `<think>` reflexione sobre estímulos visuales.
+- [ ] T9.5 Medir RAM del modelo de visión y confirmar RNF03 (< 3.5 GB).
 
 ### Funcionalidad 10: Conocimiento local (RAG)
 - [x] T10.1 Script RAG en PC: ingesta, chunking, embeddings y SQLite (`scripts/rag.py`).
@@ -76,9 +78,11 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 ### Funcionalidad 11: Modelo local pequeño con buen español (investigación)
 - [ ] T11.1 Evaluar candidatos pequeños con español fuerte (Salamandra-2B-Instruct, EuroLLM-1.7B, Qwen3-1.7B, Gemma-3-1B) verificando soporte en Unsloth y licencia.
 - [ ] T11.2 Construir un set corto de evaluación en español: fluidez, coherencia, seguimiento de instrucciones y `<think>` JSON válido.
-- [ ] T11.3 Medir el modelo actual (MiniCPM5-2B) contra los candidatos y registrar resultados.
-- [ ] T11.4 Elegir el modelo base y adaptar `finetune.py` / `infer.py`.
-- [ ] T11.5 Documentar la decisión, licencia y tamaño en RAM/GGUF.
+- [ ] T11.3 Medir el modelo actual contra los candidatos y registrar resultados.
+  - Medición informal del 2026-10-26: MiniCPM5-2B estable en formato (6/6) pero con errores de español (léxico inventado, concordancia, definiciones erróneas).
+- [x] T11.4 Elegir el modelo base y adaptar `finetune.py` / `infer.py`. Decisión: Qwen2.5-3B-Instruct (texto).
+- [x] T11.5 Documentar la decisión, licencia y tamaño en RAM/GGUF. Licencia Qwen Research (no comercial); ~1.9–2.0 GB Q4_K_M.
+- [ ] T11.6 Reentrenar y medir Qwen2.5-3B-Instruct (formato `<think>` + calidad de español) y decidir si se mantiene.
 
 ### Funcionalidad 12: Exportación de experiencias desde la app
 - [ ] T12.1 Botón «Exportar experiencias» que genere JSONL con el esquema del vault.
@@ -98,7 +102,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 
 ### Funcionalidad 6: RNF
 - [ ] T6.1 Garantizar modo 100% offline (sin llamadas de red).
-- [ ] T6.2 Validar consumo de RAM < 3.5 GB (incluyendo MiniCPM-V + mmproj + Laya/BMP).
+- [ ] T6.2 Validar consumo de RAM < 3.5 GB (Qwen2.5-3B-Instruct + proyector de visión + Laya/BMP).
 - [ ] T6.3 Compilar correctamente en ARM64 (Android).
 - [ ] T6.4 Asegurar privacidad total de datos.
 - [ ] T6.5 Validar el flujo metacognitivo completo (entrada → Laya/BMP → `<think>` → salida → `.jsonl`) sin superar latencia objetivo.

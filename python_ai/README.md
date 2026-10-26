@@ -1,6 +1,6 @@
 # python_ai — Entorno de fine-tuning (PC)
 
-Fine-tuning de un modelo chico (MiniCPM) para personalidad en español, exportado a GGUF.
+Fine-tuning de Qwen2.5-3B-Instruct para la personalidad en español de LAIN, exportado a GGUF.
 
 ## Requisitos
 
@@ -22,13 +22,13 @@ uv pip install -r requirements_finetune.txt
 
 ## Comandos
 
-Smoke test (1 paso, sin dataset de HuggingFace, sin exportar):
+Smoke test (1 paso, sin exportar):
 
 ```bash
-python scripts/finetune.py --max-steps 1 --skip-hf --no-export
+python scripts/finetune.py --max-steps 1 --no-export
 ```
 
-Entrenamiento completo (60 pasos + dataset HF + export GGUF):
+Entrenamiento completo (60 pasos sobre `personality_es.jsonl` + export GGUF):
 
 ```bash
 python scripts/finetune.py
@@ -96,6 +96,26 @@ python scripts/rag.py clear
 - Sin red, las consultas siguen funcionando con lo ya indexado.
 - `chat.py --rag` inyecta los fragmentos recuperados en el prompt.
 
+## Modelo base
+
+| Dato | Valor |
+|---|---|
+| Modelo | `Qwen/Qwen2.5-3B-Instruct` (3.1B parámetros, solo texto) |
+| Licencia | Qwen Research License (investigación; **no comercial**) |
+| GGUF Q4_K_M | ~1.9–2.0 GB |
+| Plantilla de chat | ChatML (`<|im_start|>` / `<|im_end|>`) |
+| Tag de pensamiento | No nativo: `<think>` se aprende del system prompt y del dataset |
+
+Motivo del cambio: MiniCPM5-2B sostenía el formato y el tono, pero su español era débil (léxico inventado,
+concordancias rotas, definiciones incorrectas). El formato no era el problema; el idioma sí.
+
+Consecuencias:
+
+- El dataset de entrenamiento es **solo** `personality_es.jsonl`; ya no se mezcla guanaco ni ningún corpus general.
+- La multimodalidad (T9) queda fuera de esta base: exige Qwen2.5-VL-3B-Instruct y su `mmproj.gguf`.
+- Al haber varios `.gguf` en `outputs/`, los scripts usan el más reciente (`scripts/common.py`).
+- Licencia Qwen Research: sirve para investigación y uso personal, **no para distribución comercial**. Si LAIN se comercializa, hay que pasar a Qwen2.5-7B-Instruct (Apache-2.0) o negociar licencia.
+
 ## Qué contiene realmente el modelo entrenado
 
 En simple: **el modelo no guarda el dataset, guarda lo que aprendió de él.**
@@ -111,8 +131,8 @@ extra chica (el "adaptador") encima del modelo base congelado.
 |---|---|---|
 | `outputs/checkpoint-N/adapter_model.safetensors` | ~96 MB | Solo el adaptador entrenado (lo aprendido) |
 | `outputs/checkpoint-N/optimizer.pt` | ~50 MB | Estado del optimizador, sirve solo para reanudar |
-| `outputs/model-*.safetensors` | ~4.7 GB | Modelo base + adaptador ya fusionados |
-| `outputs/MiniCPM5-2B.Q4_K_M.gguf` | ~1.5 GB | El mismo modelo fusionado, comprimido para el celular |
+| `outputs/model-*.safetensors` | ~6.2 GB | Modelo base + adaptador ya fusionados |
+| `outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf` | ~1.9–2.0 GB | El mismo modelo fusionado, comprimido para el celular |
 
 Conclusiones prácticas:
 

@@ -5,8 +5,8 @@ LAIN: asistente local con voz y personalidad en dispositivo (Edge AI). 100% offl
 ## Stack
 
 - Frontend/UI: Flutter (Dart) en `mobile_app/`.
-- LLM: llama.cpp vía FFI (MiniCPM-V cuantizado GGUF Q4_K_M, ~2.2–2.5 GB).
-- Multimodal: proyector visual `mmproj.gguf` (~150–250 MB).
+- LLM: llama.cpp vía FFI (Qwen2.5-3B-Instruct + QLoRA, GGUF Q4_K_M, ~1.9–2.0 GB).
+- Multimodal: pendiente de base; previsto Qwen2.5-VL-3B-Instruct con proyector `mmproj.gguf`.
 - Clasificador de decisión/emoción: Laya / BMP (~15 ms, ~100 MB RAM).
 - STT: whisper.cpp. TTS: Kokoro/Piper o TTS nativo.
 - Fine-tuning (PC): Python + PyTorch + Unsloth en `python_ai/` (SFT/CoT + DPO).

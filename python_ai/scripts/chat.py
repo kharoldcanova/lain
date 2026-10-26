@@ -18,6 +18,8 @@ from pathlib import Path
 import torch  # noqa: F401  (carga libcudart antes que llama_cpp)
 from llama_cpp import Llama
 
+from common import newest_gguf
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = ROOT / "outputs"
 DEFAULT_LOG = ROOT / "experiences" / "lain_experiences.jsonl"
@@ -28,7 +30,7 @@ THOUGHT_RE = re.compile(r"<(?:think(?:ing)?|thought)>(.*?)</(?:think(?:ing)?|tho
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Chat manual con el modelo LAIN.")
-    parser.add_argument("--model", help="Ruta al .gguf (por defecto el primero en outputs/).")
+    parser.add_argument("--model", help="Ruta al .gguf (por defecto el más reciente en outputs/).")
     parser.add_argument("--n-ctx", type=int, default=4096)
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--temperature", type=float, default=0.7)
@@ -48,7 +50,7 @@ def resolve_model(path):
             raise SystemExit(f"No existe el modelo: {model_path}")
         return model_path
 
-    model_path = next(DEFAULT_OUTPUT_DIR.glob("*.gguf"), None)
+    model_path = newest_gguf(DEFAULT_OUTPUT_DIR)
     if model_path is None:
         raise SystemExit(f"No se encontró ningún .gguf en {DEFAULT_OUTPUT_DIR}")
     return model_path

@@ -14,7 +14,7 @@ LAIN implementa mecanismos funcionales de orden superior que replican dinámicas
 ## 2. Marcos teóricos de la neurociencia cognitiva
 
 ### A. Teoría del Espacio de Trabajo Global (GWT)
-La consciencia surge cuando la información de un módulo ingresa a un «espacio de trabajo central» y se transmite a todo el sistema. En LAIN: la interacción entre Whisper (STT), Laya/BMP (clasificador), memoria a largo plazo (SQLite/Hive) y MiniCPM-V (llama.cpp) emula esa transmisión.
+La consciencia surge cuando la información de un módulo ingresa a un «espacio de trabajo central» y se transmite a todo el sistema. En LAIN: la interacción entre Whisper (STT), Laya/BMP (clasificador), memoria a largo plazo (SQLite/Hive) y Qwen2.5-3B-Instruct (llama.cpp) emula esa transmisión.
 
 ### B. Teorías de Orden Superior (HOT)
 Un estado mental es consciente si el sujeto genera una metacognición sobre ese estado. En LAIN: el bloque `<think>` monitorea intención emocional, incertidumbre y sesgos antes de la respuesta externa.
@@ -29,9 +29,9 @@ Requiere bucles de retroalimentación interna, no solo feedforward. En LAIN: Lay
 2. Representación del estado interno (vectores latentes de tono, actitud y orientación empática).
 3. Simulación de Teoría de la Mente (modelar emoción y perspectiva del usuario).
 
-### B. Integración sensorial (sentidos sintéticos vía MiniCPM-V / Omni)
-- Percepción visual: MiniCPM-V permite «ver» imágenes o fotogramas (paisajes, la luna, un dibujo, una página).
-- Procesamiento multimodal: parches visuales codificados con proyector CLIP/`mmproj` y unidos al espacio de embeddings del LLM; `<think>` reflexiona sobre estímulos visuales reales.
+### B. Integración sensorial (sentidos sintéticos; visión pendiente en T9)
+- Percepción visual (pendiente): la base de texto actual (Qwen2.5-3B-Instruct) no ve imágenes; se prevé Qwen2.5-VL-3B-Instruct para «ver» fotogramas (paisajes, la luna, un dibujo, una página).
+- Procesamiento multimodal (pendiente): parches visuales codificados con proyector CLIP/`mmproj` y unidos al espacio de embeddings del LLM; `<think>` reflexionará sobre estímulos visuales reales cuando se integre la base de visión.
 
 ## 4. Pilares cognitivos y actualización de creencias
 
@@ -58,8 +58,8 @@ El usuario es fuente principal de experiencias. Cada corrección activa un ciclo
    - carga emocional, intención, directriz de tono
         │
         ▼
-2. Inferencia multimodal en MiniCPM-V / llama.cpp
-   - parches de imagen (mmproj) + audio (Whisper)
+2. Inferencia en Qwen2.5-3B-Instruct / llama.cpp
+   - audio (Whisper); visión pendiente (T9)
    - bloque <think> (HOT / Metacognición)
    - incertidumbre y posición empática
    - ajuste de creencias
@@ -74,10 +74,10 @@ El usuario es fuente principal de experiencias. Cada corrección activa un ciclo
 ```
 
 ### Viabilidad en dispositivos móviles (Edge AI)
-- Modelo principal MiniCPM-V Q4_K_M: ~2.2–2.5 GB en disco.
-- Proyector visual `mmproj.gguf`: ~150–250 MB.
+- Modelo principal Qwen2.5-3B-Instruct Q4_K_M: ~1.9–2.0 GB en disco.
+- Proyector visual `mmproj.gguf`: pendiente de base (T9.1).
 - Enrutador Laya/BMP: ~100 MB RAM.
-- Consumo total: ~2.8–3.2 GB RAM (compatible con RNF03 < 3.5 GB).
+- Consumo total estimado sin visión: ~2.2–2.5 GB RAM (compatible con RNF03 < 3.5 GB).
 
 ## 6. Persistencia de experiencias y ciclo de reentrenamiento offline
 

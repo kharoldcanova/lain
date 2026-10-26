@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- `python_ai/scripts/common.py`: utilidad compartida que elige el `.gguf` más reciente de `outputs/`.
+- `python_ai/README.md`: sección «Modelo base» con modelo, licencia, tamaño, plantilla ChatML y consecuencias del cambio.
+- TASKS.md: T5.8 (reentrenar con Qwen), T9.5 (RAM de la base de visión) y T11.6 (medir Qwen tras reentrenar).
 - Documentación base del proyecto: README.md, AGENTS.md, STATE.md, ARCHITECTURE.md, CHANGELOG.md, TASKS.md.
 - .gitignore para stack Flutter + Python + modelos de IA.
 - Intención del proyecto importada desde documento fuente.
@@ -23,6 +26,11 @@
 - Dataset SFT ampliado de 7 a 87 ejemplos (saludos, acompañamiento emocional, identidad, técnica, filosofía, cotidiano y adversariales).
 
 ### Changed
+- Modelo base cambiado de `openbmb/MiniCPM5-2B` a `Qwen/Qwen2.5-3B-Instruct` (3.1B, solo texto, licencia Qwen Research: uso no comercial): MiniCPM5 sostenía el formato `<think>` y el tono, pero su español era pobre (léxico inventado, concordancias rotas, definiciones erróneas).
+- `finetune.py` entrena solo con `datasets/personality_es.jsonl`: se retiró el corpus guanaco y el flag `--skip-hf`.
+- `finetune.py`, `chat.py`, `infer.py` y `check_format.py` usan el `.gguf` más reciente, no el primero, para convivir con varios modelos en `outputs/`.
+- Documentación alineada al nuevo base: README, AGENTS, ARCHITECTURE, CONSCIENCIA, WORKFLOW, STATE y python_ai/README. La multimodalidad (T9) pasa a depender de Qwen2.5-VL-3B-Instruct.
+- Proyección de memoria actualizada: Qwen2.5-3B-Instruct Q4_K_M ~1.9–2.0 GB (antes MiniCPM-V ~2.2–2.5 GB + mmproj).
 - Reescrita la concepción del proyecto a partir del vault de Obsidian «Teoría y Arquitectura de Consciencia para LAIN».
 - README.md actualizado: nombre conceptual LOCAL ARTIFICIAL INTELIGENCE NEURONAL, consciencia funcional/metacognitiva, pilares cognitivos y restricciones de memoria (MiniCPM-V + mmproj + Laya/BMP).
 - ARCHITECTURE.md actualizado: marcos teóricos (GWT, HOT, RPT), capacidades metacognitivas, percepción multimodal, núcleo axiomático y ajuste bayesiano de creencias, flujo metacognitivo de 4 pasos y ciclo de reentrenamiento offline (`.jsonl` + SFT/CoT + DPO).

@@ -14,10 +14,10 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 
 - **Plataforma principal:** Android (base extensible a iOS).
 - **Frontend / UI:** Flutter (Dart).
-- **Motor de Inferencia de Texto (LLM):** `llama.cpp` vía FFI (modelos MiniCPM-V cuantizados en GGUF, con capacidad multimodal).
+- **Motor de Inferencia de Texto (LLM):** `llama.cpp` vía FFI (Qwen2.5-3B-Instruct afinado con QLoRA y cuantizado en GGUF Q4_K_M).
 - **Motor de Voz (STT/TTS):** `whisper.cpp` (entrada) y Kokoro/Piper o TTS nativo (salida).
 - **Clasificador de decisión/emoción:** Laya / BMP (~15 ms, ~100 MB RAM).
-- **Percepción visual:** MiniCPM-V con proyector `mmproj.gguf` (CLIP).
+- **Percepción visual:** pendiente de base; candidato Qwen2.5-VL-3B-Instruct con su proyector `mmproj.gguf`.
 - **Capacitación / Pre-entrenamiento (PC):** Python + PyTorch + Unsloth (SFT/CoT y DPO).
 - **Persistencia local:** Hive/SQLite + `lain_experiences.jsonl` (trazas metacognitivas).
 - **Restricciones:** 100% offline, privacidad total de los datos en el dispositivo.
@@ -32,10 +32,11 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 
 ## Restricciones de memoria
 
-- Modelo principal MiniCPM-V Q4_K_M: ~2.2–2.5 GB disco.
-- Proyector visual mmproj: ~150–250 MB.
+- Modelo base: Qwen2.5-3B-Instruct (3.1B parámetros, texto) afinado con QLoRA; GGUF Q4_K_M ~1.9–2.0 GB disco.
+- Proyector visual mmproj: pendiente (se medirá al integrar la base de visión, T9.1).
 - Enrutador Laya/BMP: ~100 MB RAM.
-- Consumo total combinado: ~2.8–3.2 GB RAM (compatible con RNF03 < 3.5 GB).
+- Consumo total combinado estimado: ~2.2–2.5 GB RAM sin visión (compatible con RNF03 < 3.5 GB).
+- Licencia del modelo: Qwen Research (uso no comercial). Para un producto comercial se requiere Qwen2.5-7B-Instruct (Apache-2.0).
 
 ## Conocimiento local (RAG)
 
@@ -121,7 +122,7 @@ Valida `suitable_for_sft`, exige los cuatro campos de `<think>`, evita duplicado
 python scripts/finetune.py --max-steps 200
 ```
 
-Ajusta los pasos al tamaño del dataset: pocos ejemplos sobreajustan rápido. El GGUF final queda en `python_ai/outputs/` listo para copiar a `mobile_app/assets/models/`.
+Ajusta los pasos al tamaño del dataset: pocos ejemplos sobreajustan rápido. Se entrena solo con `personality_es.jsonl` (sin corpus general). El GGUF final queda en `python_ai/outputs/` listo para copiar a `mobile_app/assets/models/`.
 
 ### 4. Conceptos nuevos (RAG)
 

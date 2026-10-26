@@ -5,7 +5,7 @@ claves y ningún bloque queda sin cerrar.
 
 Uso:
     python scripts/check_format.py
-    python scripts/check_format.py --count 10 --model outputs/MiniCPM5-2B.Q4_K_M.gguf
+    python scripts/check_format.py --count 10 --model outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf
 """
 
 import argparse
@@ -16,6 +16,8 @@ from pathlib import Path
 
 import torch  # noqa: F401  (carga libcudart antes que llama_cpp)
 from llama_cpp import Llama
+
+from common import newest_gguf
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = ROOT / "outputs"
@@ -51,7 +53,7 @@ PROMPTS = [
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Verifica el formato <think> JSON.")
-    parser.add_argument("--model", help="Ruta al .gguf (por defecto el primero en outputs/).")
+    parser.add_argument("--model", help="Ruta al .gguf (por defecto el más reciente en outputs/).")
     parser.add_argument("--count", type=int, default=20, help="Prompts a evaluar (máximo 20).")
     parser.add_argument("--max-tokens", type=int, default=420)
     parser.add_argument("--temperature", type=float, default=0.7)
@@ -66,7 +68,7 @@ def resolve_model(path):
         if not model_path.is_file():
             raise SystemExit(f"No existe el modelo: {model_path}")
         return model_path
-    model_path = next(DEFAULT_OUTPUT_DIR.glob("*.gguf"), None)
+    model_path = newest_gguf(DEFAULT_OUTPUT_DIR)
     if model_path is None:
         raise SystemExit(f"No se encontró ningún .gguf en {DEFAULT_OUTPUT_DIR}")
     return model_path
