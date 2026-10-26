@@ -17,7 +17,7 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 - **Motor de Inferencia de Texto (LLM):** `llama.cpp` vía FFI (Qwen2.5-3B-Instruct afinado con QLoRA y cuantizado en GGUF Q4_K_M).
 - **Motor de Voz (STT/TTS):** `whisper.cpp` (entrada) y Kokoro/Piper o TTS nativo (salida).
 - **Clasificador de decisión/emoción:** Laya / BMP (~15 ms, ~100 MB RAM).
-- **Percepción visual:** pendiente de base; candidato Qwen2.5-VL-3B-Instruct con su proyector `mmproj.gguf`.
+- **Percepción visual:** MiniCPM-V 4 (GGUF + `mmproj`) describe la imagen en texto y ese texto entra al LLM de texto (dos pasos).
 - **Capacitación / Pre-entrenamiento (PC):** Python + PyTorch + Unsloth (SFT/CoT y DPO).
 - **Persistencia local:** Hive/SQLite + `lain_experiences.jsonl` (trazas metacognitivas).
 - **Restricciones:** 100% offline, privacidad total de los datos en el dispositivo.
@@ -33,9 +33,9 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 ## Restricciones de memoria
 
 - Modelo base: Qwen2.5-3B-Instruct (3.1B parámetros, texto) afinado con QLoRA; GGUF Q4_K_M ~1.9–2.0 GB disco.
-- Proyector visual mmproj: pendiente (se medirá al integrar la base de visión, T9.1).
+- VLM de visión MiniCPM-V 4 Q4_K_M + mmproj: ~3.0 GB disco (se carga solo cuando hay imagen).
 - Enrutador Laya/BMP: ~100 MB RAM.
-- Consumo total combinado estimado: ~2.2–2.5 GB RAM sin visión (compatible con RNF03 < 3.5 GB).
+- Consumo total estimado: ~2.2–2.5 GB RAM en texto; ~3.0–3.2 GB cuando se procesa una imagen (VLM y LLM se cargan en secuencia).
 - Licencia del modelo: Qwen Research (uso no comercial). Para un producto comercial se requiere Qwen2.5-7B-Instruct (Apache-2.0).
 
 ## Conocimiento local (RAG)

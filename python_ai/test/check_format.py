@@ -4,8 +4,8 @@
 claves y ningún bloque queda sin cerrar.
 
 Uso:
-    python scripts/check_format.py
-    python scripts/check_format.py --count 10 --model outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf
+    python test/check_format.py
+    python test/check_format.py --count 10 --model outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf
 """
 
 import argparse
@@ -13,6 +13,8 @@ import json
 import re
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import torch  # noqa: F401  (carga libcudart antes que llama_cpp)
 from llama_cpp import Llama

@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- `python_ai/test/eval_es.py`: set de 8 casos (identidad, emoción, técnica, incertidumbre, adversarial, cotidiano, ortografía, matemática) con formato, latencia y salida JSON para comparar modelos base.
+- `python_ai/scripts/vision.py`: visión en dos pasos (MiniCPM-V 4 describe la imagen y Qwen razona sobre el texto), con `--caption-only`, registro `vision_input` y `has_multimodal_input: true`.
+- `python_ai/README.md`: sección «Visión (dos pasos)» con descarga de MiniCPM-V 4 y ejemplos de uso.
 - `python_ai/scripts/common.py`: utilidad compartida que elige el `.gguf` más reciente de `outputs/`.
 - `python_ai/README.md`: sección «Modelo base» con modelo, licencia, tamaño, plantilla ChatML y consecuencias del cambio.
 - TASKS.md: T5.8 (reentrenar con Qwen), T9.5 (RAM de la base de visión) y T11.6 (medir Qwen tras reentrenar).
@@ -22,14 +25,17 @@
 - TASKS.md: Funcionalidad 11 (evaluar modelo pequeño con buen español), 12 (exportar experiencias desde la app) y 13 (ciclo de aprendizaje).
 - `WORKFLOW.md`: flujo completo de LAIN — entorno Python (SFT, DPO, RAG, importador), runtime en el celular, ciclo de aprendizaje y comparación SFT/DPO/RAG.
 - `python_ai/scripts/validate_dataset.py`: valida el contrato del dataset (`<think>` + JSON de cuatro claves) antes de entrenar.
-- `python_ai/scripts/check_format.py`: mide la estabilidad del bloque `<think>` en 20 prompts y exige ≥90 % de JSON válido sin bloques abiertos.
+- `python_ai/test/check_format.py`: mide la estabilidad del bloque `<think>` en 20 prompts y exige ≥90 % de JSON válido sin bloques abiertos.
 - Dataset SFT ampliado de 7 a 87 ejemplos (saludos, acompañamiento emocional, identidad, técnica, filosofía, cotidiano y adversariales).
 
 ### Changed
+- Scripts de prueba y evaluación del modelo movidos de `python_ai/scripts/` a `python_ai/test/` (`check_format.py`, `eval_es.py`, `infer.py`); se actualizaron las rutas de los comandos en la documentación.
+- Multimodalidad rediseñada a dos pasos: se descarta compartir embeddings visuales con el LLM; MiniCPM-V 4 (GGUF Q4_K_M + `mmproj`) genera descripción + OCR y ese texto entra al prompt de Qwen. VLM y LLM se cargan en secuencia para no sumar RAM.
+- `chat.py`: `log_experience` acepta `trigger_type` y `has_multimodal_input` (por defecto `chat_message` / `false`).
 - Modelo base cambiado de `openbmb/MiniCPM5-2B` a `Qwen/Qwen2.5-3B-Instruct` (3.1B, solo texto, licencia Qwen Research: uso no comercial): MiniCPM5 sostenía el formato `<think>` y el tono, pero su español era pobre (léxico inventado, concordancias rotas, definiciones erróneas).
 - `finetune.py` entrena solo con `datasets/personality_es.jsonl`: se retiró el corpus guanaco y el flag `--skip-hf`.
 - `finetune.py`, `chat.py`, `infer.py` y `check_format.py` usan el `.gguf` más reciente, no el primero, para convivir con varios modelos en `outputs/`.
-- Documentación alineada al nuevo base: README, AGENTS, ARCHITECTURE, CONSCIENCIA, WORKFLOW, STATE y python_ai/README. La multimodalidad (T9) pasa a depender de Qwen2.5-VL-3B-Instruct.
+- Documentación alineada al nuevo base: README, AGENTS, ARCHITECTURE, CONSCIENCIA, WORKFLOW, STATE y python_ai/README. La multimodalidad (T9) se resuelve con visión en dos pasos (MiniCPM-V 4 describe, Qwen razona).
 - Proyección de memoria actualizada: Qwen2.5-3B-Instruct Q4_K_M ~1.9–2.0 GB (antes MiniCPM-V ~2.2–2.5 GB + mmproj).
 - Reescrita la concepción del proyecto a partir del vault de Obsidian «Teoría y Arquitectura de Consciencia para LAIN».
 - README.md actualizado: nombre conceptual LOCAL ARTIFICIAL INTELIGENCE NEURONAL, consciencia funcional/metacognitiva, pilares cognitivos y restricciones de memoria (MiniCPM-V + mmproj + Laya/BMP).

@@ -151,16 +151,16 @@ def ask(llm, messages, args, context=None):
     return parse_thought("".join(raw))
 
 
-def log_experience(path, user_input, answer, thought):
+def log_experience(path, user_input, answer, thought, trigger_type="chat_message", has_multimodal_input=False):
     """Escribe una línea con el esquema `lain_experiences.jsonl` del vault."""
     record = {
         "id": f"exp_{datetime.now(timezone.utc):%Y%m%d}_{uuid.uuid4().hex[:6]}",
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "trigger_type": "chat_message",
+        "trigger_type": trigger_type,
         "context": {
             "user_input": user_input,
             "laya_decision": None,
-            "has_multimodal_input": False,
+            "has_multimodal_input": has_multimodal_input,
         },
         "metacognition": {
             "thought_trace": thought["thought_trace"],

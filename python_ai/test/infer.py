@@ -1,6 +1,9 @@
 """Prueba de inferencia del modelo fine-tuneado exportado a GGUF."""
 
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 import torch  # noqa: F401  (carga libcudart antes que llama_cpp)
 from llama_cpp import Llama

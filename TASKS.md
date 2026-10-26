@@ -11,7 +11,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [x] T5.4 Ejecutar fine-tuning completo en PC (GPU) y exportar GGUF.
   - [x] Pipeline validado con smoke test (1 paso + export GGUF Q4_K_M).
   - [x] Corrida completa: 60 pasos (loss 2.30 → 0.68) + GGUF Q4_K_M.
-- [x] T5.5 Probar inferencia con `scripts/infer.py` (validar personalidad).
+- [x] T5.5 Probar inferencia con `test/infer.py` (validar personalidad).
   - [x] Inferencia funcional verificada sobre el GGUF exportado.
 - [ ] T5.6 Preparar dataset de trazas metacognitivas (`thought_trace`) para SFT/CoT.
 - [ ] T5.7 Preparar pares de preferencia para DPO (`rejected_alternative`).
@@ -59,12 +59,13 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T8.6 Implementar bucle recurrente Laya/BMP (RPT) sobre respuestas previas.
 - [ ] T8.7 Registrar asíncronamente la experiencia en `lain_experiences.jsonl` (Background Isolate).
 
-### Funcionalidad 9: Percepción multimodal
-- [ ] T9.1 Elegir la base de visión (previsto Qwen2.5-VL-3B-Instruct) y cargar su `mmproj.gguf` en llama.cpp.
+### Funcionalidad 9: Percepción multimodal (visión en dos pasos)
+- [x] T9.1 Elegir la base de visión y cargarla en llama.cpp: MiniCPM-V 4 GGUF Q4_K_M + `mmproj` vía `MTMDChatHandler`.
 - [ ] T9.2 Capturar imágenes/fotogramas de la cámara en Flutter.
-- [ ] T9.3 Codificar parches visuales e integrarlos al espacio de embeddings del LLM.
-- [ ] T9.4 Permitir que `<think>` reflexione sobre estímulos visuales.
-- [ ] T9.5 Medir RAM del modelo de visión y confirmar RNF03 (< 3.5 GB).
+- [x] T9.3 Convertir la imagen en descripción textual (descripción + OCR) y pasarla al LLM de texto (`scripts/vision.py`).
+- [x] T9.4 Permitir que `<think>` reflexione sobre la descripción visual (validado en PC).
+- [ ] T9.5 Medir RAM del VLM y confirmar RNF03 (< 3.5 GB).
+- [ ] T9.6 Liberar el VLM antes de cargar el LLM en el celular (carga secuencial).
 
 ### Funcionalidad 10: Conocimiento local (RAG)
 - [x] T10.1 Script RAG en PC: ingesta, chunking, embeddings y SQLite (`scripts/rag.py`).
@@ -77,7 +78,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 
 ### Funcionalidad 11: Modelo local pequeño con buen español (investigación)
 - [ ] T11.1 Evaluar candidatos pequeños con español fuerte (Salamandra-2B-Instruct, EuroLLM-1.7B, Qwen3-1.7B, Gemma-3-1B) verificando soporte en Unsloth y licencia.
-- [ ] T11.2 Construir un set corto de evaluación en español: fluidez, coherencia, seguimiento de instrucciones y `<think>` JSON válido.
+- [x] T11.2 Construir un set corto de evaluación en español: `test/eval_es.py` (8 casos, formato, latencia y JSON de salida).
 - [ ] T11.3 Medir el modelo actual contra los candidatos y registrar resultados.
   - Medición informal del 2026-10-26: MiniCPM5-2B estable en formato (6/6) pero con errores de español (léxico inventado, concordancia, definiciones erróneas).
 - [x] T11.4 Elegir el modelo base y adaptar `finetune.py` / `infer.py`. Decisión: Qwen2.5-3B-Instruct (texto).
@@ -96,7 +97,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T13.2 Versionar datasets y GGUF (fecha/hash) para poder revertir.
 - [ ] T13.3 Pipeline DPO con `rejected_alternative`.
 - [ ] T13.4 Prueba de regresión de personalidad tras cada reentrenamiento.
-- [x] T13.5 `scripts/check_format.py`: mide la tasa de `<think>` JSON válido (20/20 tras ampliar el dataset).
+- [x] T13.5 `test/check_format.py`: mide la tasa de `<think>` JSON válido (20/20 tras ampliar el dataset).
 
 ## Fase 3: Requisitos no funcionales (transversal)
 

@@ -29,9 +29,9 @@ Requiere bucles de retroalimentación interna, no solo feedforward. En LAIN: Lay
 2. Representación del estado interno (vectores latentes de tono, actitud y orientación empática).
 3. Simulación de Teoría de la Mente (modelar emoción y perspectiva del usuario).
 
-### B. Integración sensorial (sentidos sintéticos; visión pendiente en T9)
-- Percepción visual (pendiente): la base de texto actual (Qwen2.5-3B-Instruct) no ve imágenes; se prevé Qwen2.5-VL-3B-Instruct para «ver» fotogramas (paisajes, la luna, un dibujo, una página).
-- Procesamiento multimodal (pendiente): parches visuales codificados con proyector CLIP/`mmproj` y unidos al espacio de embeddings del LLM; `<think>` reflexionará sobre estímulos visuales reales cuando se integre la base de visión.
+### B. Integración sensorial (sentidos sintéticos; visión en dos pasos)
+- Percepción visual (en dos pasos): MiniCPM-V 4 «ve» el fotograma (paisajes, la luna, un dibujo, una página) y lo convierte en texto; Qwen2.5-3B-Instruct razona sobre esa descripción.
+- Procesamiento multimodal: los parches visuales se codifican con el proyector CLIP/`mmproj` del VLM y se resuelven como descripción textual; `<think>` reflexiona sobre esa descripción, no sobre embeddings compartidos.
 
 ## 4. Pilares cognitivos y actualización de creencias
 
@@ -59,7 +59,7 @@ El usuario es fuente principal de experiencias. Cada corrección activa un ciclo
         │
         ▼
 2. Inferencia en Qwen2.5-3B-Instruct / llama.cpp
-   - audio (Whisper); visión pendiente (T9)
+   - audio (Whisper); visión en dos pasos validada en PC (T9)
    - bloque <think> (HOT / Metacognición)
    - incertidumbre y posición empática
    - ajuste de creencias
@@ -75,7 +75,7 @@ El usuario es fuente principal de experiencias. Cada corrección activa un ciclo
 
 ### Viabilidad en dispositivos móviles (Edge AI)
 - Modelo principal Qwen2.5-3B-Instruct Q4_K_M: ~1.9–2.0 GB en disco.
-- Proyector visual `mmproj.gguf`: pendiente de base (T9.1).
+- VLM MiniCPM-V 4 Q4_K_M + `mmproj`: ~3.0 GB en disco; base elegida (T9.1) y visión validada en PC.
 - Enrutador Laya/BMP: ~100 MB RAM.
 - Consumo total estimado sin visión: ~2.2–2.5 GB RAM (compatible con RNF03 < 3.5 GB).
 

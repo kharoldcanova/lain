@@ -37,7 +37,7 @@ python scripts/finetune.py
 Probar el modelo exportado:
 
 ```bash
-python scripts/infer.py
+python test/infer.py
 ```
 
 Chat manual (con historial y registro de experiencias):
@@ -58,7 +58,7 @@ usa el texto completo como `thought_trace`. Los campos que dependen de Laya/BMP 
 Verificar la estabilidad del formato (20 prompts, exige ≥90 % de JSON válido y cero bloques sin cerrar):
 
 ```bash
-python scripts/check_format.py
+python test/check_format.py
 ```
 
 Validar el dataset antes de entrenar (contrato `<think>` + JSON de cuatro claves):
@@ -66,6 +66,38 @@ Validar el dataset antes de entrenar (contrato `<think>` + JSON de cuatro claves
 ```bash
 python scripts/validate_dataset.py
 ```
+
+Evaluación cualitativa (español + formato, sin puntuación automática):
+
+```bash
+python test/eval_es.py
+python test/eval_es.py --model outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf --json-out eval.json
+```
+
+## Visión (dos pasos)
+
+La imagen no se convierte en embeddings del LLM: un VLM la describe en texto y ese texto entra al prompt.
+
+```bash
+mkdir -p models
+curl -L -o models/ggml-model-Q4_K_M.gguf \
+  https://huggingface.co/openbmb/MiniCPM-V-4-gguf/resolve/main/ggml-model-Q4_K_M.gguf
+curl -L -o models/mmproj-model-f16.gguf \
+  https://huggingface.co/openbmb/MiniCPM-V-4-gguf/resolve/main/mmproj-model-f16.gguf
+```
+
+Uso:
+
+```bash
+python scripts/vision.py --image foto.jpg                      # describe + responde
+python scripts/vision.py --image foto.jpg --caption-only       # solo la descripción
+python scripts/vision.py --image foto.jpg --question "¿Qué planta es?" --hide-thought
+```
+
+- VLM: MiniCPM-V 4 (`models/`, ~3.0 GB) con `MTMDChatHandler`.
+- LLM: el `.gguf` más reciente de `outputs/`.
+- El VLM se libera antes de cargar el LLM: el pico de RAM no suma ambos modelos.
+- La experiencia se registra con `trigger_type: vision_input` y `has_multimodal_input: true`.
 
 ## Importar experiencias exportadas por la app
 
@@ -112,7 +144,7 @@ concordancias rotas, definiciones incorrectas). El formato no era el problema; e
 Consecuencias:
 
 - El dataset de entrenamiento es **solo** `personality_es.jsonl`; ya no se mezcla guanaco ni ningún corpus general.
-- La multimodalidad (T9) queda fuera de esta base: exige Qwen2.5-VL-3B-Instruct y su `mmproj.gguf`.
+- La multimodalidad (T9) no usa esta base: la imagen la describe MiniCPM-V 4 y el texto entra al prompt (ver «Visión (dos pasos)»).
 - Al haber varios `.gguf` en `outputs/`, los scripts usan el más reciente (`scripts/common.py`).
 - Licencia Qwen Research: sirve para investigación y uso personal, **no para distribución comercial**. Si LAIN se comercializa, hay que pasar a Qwen2.5-7B-Instruct (Apache-2.0) o negociar licencia.
 
@@ -148,6 +180,7 @@ día se entrenan datos privados.
 ## Estructura
 
 - `datasets/` — dataset de personalidad (`personality_es.jsonl`) y system prompt.
-- `scripts/` — `finetune.py` (QLoRA + export GGUF) e `infer.py` (prueba con llama-cpp-python).
+- `scripts/` — entrenamiento y pipeline: `finetune.py` (QLoRA + export GGUF), `chat.py`, `common.py`, `import_experiences.py`, `rag.py`, `validate_dataset.py` y `vision.py`.
+- `test/` — pruebas y evaluaciones manuales del modelo: `check_format.py`, `eval_es.py` e `infer.py`.
 - `outputs/` — modelos exportados en `.gguf` (ignorado por git).
 - `requirements.txt` — dependencias de inferencia; `requirements_finetune.txt` — dependencias de entrenamiento.

@@ -6,7 +6,7 @@ LAIN: asistente local con voz y personalidad en dispositivo (Edge AI). 100% offl
 
 - Frontend/UI: Flutter (Dart) en `mobile_app/`.
 - LLM: llama.cpp vía FFI (Qwen2.5-3B-Instruct + QLoRA, GGUF Q4_K_M, ~1.9–2.0 GB).
-- Multimodal: pendiente de base; previsto Qwen2.5-VL-3B-Instruct con proyector `mmproj.gguf`.
+- Visión: dos pasos con MiniCPM-V 4 (GGUF + `mmproj`), que describe la imagen en texto para Qwen.
 - Clasificador de decisión/emoción: Laya / BMP (~15 ms, ~100 MB RAM).
 - STT: whisper.cpp. TTS: Kokoro/Piper o TTS nativo.
 - Fine-tuning (PC): Python + PyTorch + Unsloth en `python_ai/` (SFT/CoT + DPO).
@@ -15,7 +15,7 @@ LAIN: asistente local con voz y personalidad en dispositivo (Edge AI). 100% offl
 
 ## Estado actual
 
-Repositorio con documentación base completa, estructura de carpetas (`mobile_app/`, `python_ai/`), `pubspec.yaml` de Flutter y scripts de fine-tuning/inferencia en Python. La app Flutter aún no tiene código Dart funcional. Ver `STATE.md` y `TASKS.md` para el detalle.
+Repositorio con documentación base completa, estructura de carpetas (`mobile_app/`, `python_ai/`), `pubspec.yaml` de Flutter y scripts de fine-tuning/inferencia en Python: pipeline operativo en PC (`scripts/`, pruebas y evaluación en `python_ai/test/`), visión en dos pasos validada en PC (MiniCPM-V 4 → Qwen) y reentrenamiento de Qwen2.5-3B-Instruct en curso. La app Flutter aún no tiene código Dart funcional. Ver `STATE.md` y `TASKS.md` para el detalle.
 
 ## Convenciones
 

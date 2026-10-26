@@ -119,12 +119,12 @@ python scripts/import_experiences.py --input ~/Descargas/lain_experiences.jsonl 
 python scripts/import_experiences.py --input ~/Descargas/lain_experiences.jsonl
 ```
 
-### 2.6 Prueba — `scripts/chat.py` / `scripts/infer.py`
+### 2.6 Prueba — `scripts/chat.py` / `test/infer.py`
 
-- `infer.py`: una pregunta, salida limpia (sin `<think>`).
-- `validate_dataset.py`: verifica el contrato del dataset antes de entrenar.
-- `check_format.py`: mide la tasa de `<think>` JSON válido en 20 prompts.
-- `chat.py`: conversación interactiva, historial, `--rag`, `--hide-thought`, y registro automático en `experiences/lain_experiences.jsonl`.
+- `test/infer.py`: una pregunta, salida limpia (sin `<think>`).
+- `scripts/validate_dataset.py`: verifica el contrato del dataset antes de entrenar.
+- `test/check_format.py`: mide la tasa de `<think>` JSON válido en 20 prompts.
+- `scripts/chat.py`: conversación interactiva, historial, `--rag`, `--hide-thought`, y registro automático en `experiences/lain_experiences.jsonl`.
 
 ---
 
@@ -214,7 +214,7 @@ Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SF
 |---|---|
 | Entorno Python + Unsloth | ✅ |
 | Fine-tuning SFT + export GGUF | ✅ validado con MiniCPM5-2B (histórico) |
-| Modelo base | 🔄 Qwen2.5-3B-Instruct configurado, reentrenamiento pendiente (T11.6) |
+| Modelo base | 🔄 Qwen2.5-3B-Instruct elegido; reentrenamiento en curso (T11.6) |
 | Inferencia (`infer.py`, `chat.py`) | ✅ sirven cualquier GGUF de `outputs/` |
 | `<think>` en JSON | ✅ 20/20 con MiniCPM5; por medir en Qwen (T11.6) |
 | RAG local (PC) | ✅ |
@@ -222,7 +222,8 @@ Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SF
 | DPO | ⏳ T13.3 |
 | App Flutter (UI, FFI, STT, TTS) | ⏳ Fase 2 |
 | Laya/BMP | ⏳ T8.1 |
-| Multimodal (`mmproj`) | ⏳ T9.x |
+| Visión en dos pasos (PC, `vision.py`) | ✅ validada con MiniCPM-V 4 (descripción + OCR) |
+| Multimodal en la app (`mmproj`) | ⏳ T9.x |
 | Exportar experiencias desde la app | ⏳ T12.1 |
 
 ---

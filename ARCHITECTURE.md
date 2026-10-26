@@ -19,10 +19,20 @@
 2. Representación del estado interno (vectores latentes de tono/actitud/empatía).
 3. Simulación de Teoría de la Mente (modelar emoción/perspectiva del usuario).
 
-## Percepción multimodal
+## Percepción multimodal (visión en dos pasos)
 
-- Percepción visual (pendiente, T9): base de visión prevista Qwen2.5-VL-3B-Instruct; los parches visuales se codifican vía proyector CLIP/mmproj y se unen al espacio de embeddings del LLM, permitiendo que `<think>` reflexione sobre estímulos visuales reales.
-- El modelo de texto (Qwen2.5-3B-Instruct) no es multimodal: la visión requiere cargar una base VL aparte o sustituir la base por Qwen2.5-VL-3B-Instruct y reentrenar.
+Decisión: no se comparten embeddings entre visión y texto. La imagen pasa primero por un VLM y sale como texto.
+
+1. **VLM (MiniCPM-V 4, GGUF Q4_K_M + `mmproj`)**: recibe la imagen y devuelve una descripción objetiva en español, con OCR del texto visible (`scripts/vision.py`).
+2. **LLM de texto (Qwen2.5-3B-Instruct)**: recibe esa descripción como contexto del turno y responde con el bloque `<think>` habitual, reflexionando sobre lo descrito.
+
+Por qué:
+
+- Qwen2.5-3B-Instruct es solo texto; cargar embeddings visuales exigiría sustituir la base y reentrenar.
+- El VLM se descarga y actualiza por separado, sin tocar el adaptador de personalidad.
+- Los dos modelos se cargan en secuencia: el VLM se libera antes de cargar el LLM, así el pico de RAM se mantiene en ~3.0–3.2 GB.
+
+Coste: una pasada extra de inferencia por imagen y ~3.0 GB de disco para el VLM (`python_ai/models/`).
 
 ## Memoria semántica (RAG local)
 
@@ -99,6 +109,7 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
 ├── python_ai/                # Entorno de entrenamiento y preparación (PC)
 │   ├── datasets/             # Datasets de instrucciones / personalidad en español
 │   ├── scripts/              # Scripts de Fine-Tuning con Unsloth / PyTorch
+│   ├── test/                 # Pruebas y evaluaciones manuales del modelo
 │   ├── outputs/              # Modelos finales exportados en formato .gguf
 │   └── requirements.txt      # Dependencias de Python
 ├── mobile_app/               # Aplicación principal en Flutter
