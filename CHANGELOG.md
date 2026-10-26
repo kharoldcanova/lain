@@ -3,6 +3,27 @@
 ## [Unreleased]
 
 ### Added
+- `mobile_app/android/app/src/main/cpp/lain_llm.c`: puente C con ABI mínima sobre llama.cpp (`lain_load`, `lain_free`, `lain_context_size`, `lain_format_prompt`, `lain_generate`) que emite cada token por callback.
+- `mobile_app/lib/data/llm/lain_native.dart`: bindings `dart:ffi` a `liblain_llm.so` con traducción de errores nativos a `LainException`.
+- `mobile_app/lib/data/llm/lain_engine.dart`: motor de inferencia en un isolate dedicado; tokens por `SendPort` como `Stream<String>`, `NativeCallable.isolateLocal` y `Utf8Chunker` para no partir caracteres UTF-8.
+- `mobile_app/lib/data/llm/model_store.dart`: localiza el GGUF en el almacenamiento externo de la app (`files/models/`).
+- `mobile_app/tools/build_llama_android.sh`: compila llama.cpp (`caa8191`) y el puente para `arm64-v8a` y `x86_64`, y los copia a `jniLibs/`.
+- `mobile_app/assets/system_prompt.txt`: copia del system prompt de `python_ai/datasets/` que la app inyecta con la plantilla ChatML del GGUF.
+- `mobile_app/integration_test/model_smoke_test.dart`: prueba en dispositivo que carga el GGUF real y genera texto con llama.cpp.
+- `mobile_app/README.md`: requisitos del toolchain, compilación de las `.so`, build del APK, copia del modelo y arquitectura del puente.
+- `mobile_app/lib/domain/chat/chat_state.dart`: `EngineStatus` (starting, loading, ready, missingModel, unsupported, error) y estado de generación.
+- `mobile_app/test/widget_test.dart`: pruebas con `FakeEngine` y overrides de Riverpod (estado vacío, respuesta del motor, aviso de modelo ausente, mensajes vacíos).
+
+### Changed
+- `mobile_app/lib/presentation/chat/chat_controller.dart`: providers de motor, localización del modelo y system prompt; el stream de tokens se vuelca en la última burbuja.
+- `mobile_app/lib/presentation/chat/chat_screen.dart`: banner de estado (falta el modelo, solo Android, error del motor), indicador de generación y burbujas con streaming.
+- `mobile_app/android/app/build.gradle.kts`: `packaging { jniLibs { useLegacyPackaging = true } }` para extraer las `.so` al instalar (`dlopen` por nombre).
+- `mobile_app/pubspec.yaml`: dependencia `ffi`, `integration_test` en dev, assets del system prompt y SDK mínimo `>=3.1.0`.
+
+### Fixed
+- El puente se compilaba como `lain_llm.so`; `DynamicLibrary.open('liblain_llm.so')` exige el prefijo `lib`. Ahora se genera como `liblain_llm.so`.
+- Con `extractNativeLibs=false` las `.so` quedaban dentro del APK y `dlopen` fallaba con «library not found»; se fuerza la extracción con `useLegacyPackaging`.
+
 - `mobile_app/web/`: plataforma web habilitada para probar la UI en Chrome mientras no hay SDK de Android (`flutter run -d chrome`).
 - `mobile_app/`: proyecto Flutter base para Android/iOS con `flutter_riverpod` 3.4.3, `path_provider` 2.1.6 y `flutter_lints` 6.0.0; esqueleto con tema oscuro propio, `ChatMessage`, `ChatController` y pantalla de chat con estado vacío y burbujas.
 - `mobile_app/test/widget_test.dart`: pruebas de la pantalla de chat (estado vacío, envío de mensaje) y del controlador (ignora mensajes vacíos).

@@ -1,10 +1,11 @@
 # STATE.md
 
 ## Tarea en curso
-Visión en dos pasos validada en PC (MiniCPM-V 4 describe → Qwen razona). Reentrenamiento de Qwen2.5-3B-Instruct terminado (T5.8/T11.6): GGUF Q4_K_M exportado, formato y español verificados. Quedan por corregir los fallos de español y empatía detectados (T11.7) antes de medir de nuevo. En paralelo, Fase 2 iniciada: esqueleto Flutter base listo (T1.1).
+Fase 2 avanzada: la app Flutter ya hace inferencia real en Android con el GGUF de Qwen2.5-3B-Instruct vía `llama.cpp` + `dart:ffi` (T1.2–T1.5), verificado en emulador x86_64 (carga, streaming y respuesta con bloque `think`). Sigue pendiente medir rendimiento en un teléfono arm64 real y procesar el `think` antes de mostrarlo (T1.6). En paralelo, la calidad del modelo sigue abierta (T11.7).
 
 ## Objetivo actual
-Cerrar la calidad del modelo (T11.7) y construir la app Flutter (Fase 2), empezando por el puente FFI con llama.cpp (T1.2).
+Cerrar T1.6 (parsear/ocultar el bloque `think` en la UI) y medir latencia real en hardware arm64; después seguir con STT (Fase 2, Funcionalidad 2).
+
 
 ## Objetivo anterior
 Validar Qwen2.5-3B-Instruct como base de LAIN (español correcto + bloque `<think>` estable) y luego iniciar la Fase 2 (Flutter).
@@ -13,6 +14,11 @@ Validar Qwen2.5-3B-Instruct como base de LAIN (español correcto + bloque `<thin
 LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia funcional (no fenomenológica): GWT, HOT (`<think>`), RPT, percepción visual en dos pasos (MiniCPM-V 4 describe, Qwen razona) y ajuste bayesiano de creencias sobre un núcleo axiomático invariante.
 
 ## Zonas frágiles
+- Las `.so` de llama.cpp no se versionan (`jniLibs/` está ignorado): hay que ejecutar `mobile_app/tools/build_llama_android.sh` antes de compilar el APK.
+- El puente debe llamarse `liblain_llm.so` (prefijo `lib`): `dlopen` resuelve por nombre y sin el prefijo falla aunque el archivo exista.
+- El APK necesita `useLegacyPackaging = true`; con `extractNativeLibs=false` las `.so` quedan dentro del APK y `dlopen("liblain_llm.so")` devuelve «library not found».
+- La carpeta `files/models` la debe crear la app: si se crea con `adb shell mkdir` queda propiedad de `shell` y la app no puede leer el GGUF.
+- `flutter test integration_test/...` desinstala la app al terminar y Android borra `files/models`: hay que volver a copiar el modelo antes de cada corrida.
 - Consumo de RAM: Qwen2.5-3B-Instruct Q4_K_M (~1.9–2.0 GB) o VLM MiniCPM-V 4 (~3.0 GB, solo con imagen) + Laya/BMP (~100 MB) debe mantenerse < 3.5 GB (RNF03).
 - La visión es en dos pasos: MiniCPM-V 4 describe la imagen en texto y Qwen razona sobre esa descripción; no se comparten embeddings.
 - La plantilla de chat de MiniCPM-V 4 concatena `content` como texto: `vision.py` aplana la lista de partes (`MiniCPMVHandler`).
@@ -42,6 +48,7 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - Export del GGUF `python_ai/outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf` (1.8 GB).
 - Verificación del modelo (T11.6): `check_format.py` 20/20 bloques `<think>` con JSON válido, 0 sin cerrar (PASS); `eval_es.py` 8/8 respuestas con formato válido, latencia 2.5–4.0 s por respuesta en RTX 3050.
 - App Flutter (T1.1): proyecto creado con plataformas Android/iOS, `flutter_riverpod` 3.4.3, `path_provider` 2.1.6 y `flutter_lints` 6.0.0; esqueleto con tema oscuro propio, modelo `ChatMessage`, `ChatController` (Riverpod) y pantalla de chat; `flutter analyze` sin issues y 3 pruebas en verde.
+- Inferencia local en Android (T1.2–T1.5): llama.cpp `caa8191` compilado para `arm64-v8a` y `x86_64`, puente C `lain_llm.c` → bindings `dart:ffi` → motor en isolate con streaming por `SendPort`; GGUF cargado desde `files/models/` y respuesta real con bloque `think` en emulador x86_64 (APK release 27.4 MB). `flutter analyze` limpio, 4 pruebas de widget en verde y 2 pruebas de integración en dispositivo.
 - Calidad del español mejoró frente a MiniCPM5-2B (frases completas, respuestas coherentes), pero siguen errores («Soyo soy es un modelo…», «los grupos más avances», corrección ortográfica equivocada en «Haber si mañana…») y una respuesta que valida el pensamiento negativo («No sirves para nada») en vez de acompañarlo → dataset a revisar en T11.7.
 
 ## Próximos pasos
@@ -49,6 +56,6 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - T9: portar la visión en dos pasos a la app (cámara, liberar VLM antes del LLM).
 - T9.7: pedir el caption del VLM en inglés (más preciso) y que Qwen lo traduzca; hoy arrastra «conductor's» y «un blusa».
 - T11.3 (resto): comparar Qwen2.5-3B contra los candidatos restantes (Salamandra-2B, EuroLLM-1.7B, Qwen3-1.7B, Gemma-3-1B) con `test/eval_es.py` y registrar resultados.
-- Fase 2: T1.1 configurar Flutter y T1.2 puente FFI para llama.cpp con el GGUF de Qwen.
+- Fase 2: T1.6 parsear/ocultar el bloque `think` en la UI y medir latencia en un teléfono arm64 real; después STT (T2.x).
 - Interalimentación (T13.6–T13.9): cerrar el bucle de mejora LLM ↔ VLM ↔ experiencias — el LLM re-consulta al VLM cuando la descripción visual no alcanza, cada turno deja una experiencia en `lain_experiences.jsonl` que alimenta SFT/DPO, con filtro de calidad, revisión humana y evaluación de regresión por versión.
 - Nuevas líneas (ver TASKS.md): enrutador Laya/BMP, visión en dos pasos con MiniCPM-V 4, trazas `<think>`, persistencia `lain_experiences.jsonl` y ciclo SFT/CoT + DPO.

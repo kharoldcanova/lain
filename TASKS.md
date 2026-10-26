@@ -30,10 +30,15 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 ### Funcionalidad 1: Inferencia de texto local
 - [x] T1.1 Configurar proyecto Flutter en `mobile_app/` con dependencias base.
   - `flutter create` (android/ios), `flutter_riverpod`, `path_provider` y `flutter_lints`; esqueleto con `main.dart`, `app.dart`, `core/theme.dart`, `domain/chat/chat_message.dart` y `presentation/chat/`; `flutter analyze` limpio y 3 pruebas en verde.
-- [ ] T1.2 Integrar puente FFI para llama.cpp (bindings Dart ↔ C++).
-- [ ] T1.3 Cargar el GGUF de Qwen2.5-3B-Instruct desde almacenamiento local.
-- [ ] T1.4 Inyectar System Prompt dinámico para personalidad en español.
-- [ ] T1.5 Implementar streaming de tokens (Time to First Token < 2s).
+- [x] T1.2 Integrar puente FFI para llama.cpp (bindings Dart ↔ C++).
+  - `android/app/src/main/cpp/lain_llm.c` (C ABI: `lain_load`, `lain_free`, `lain_context_size`, `lain_format_prompt`, `lain_generate`), bindings en `lib/data/llm/lain_native.dart`, `tools/build_llama_android.sh` compila llama.cpp (`caa8191`) para `arm64-v8a` y `x86_64`. Verificado en emulador x86_64: `dlopen` correcto y generación real.
+- [x] T1.3 Cargar el GGUF de Qwen2.5-3B-Instruct desde almacenamiento local.
+  - `lib/data/llm/model_store.dart` busca el GGUF en `files/models/` del almacenamiento externo; la pantalla avisa con el comando `adb push` si falta.
+- [x] T1.4 Inyectar System Prompt dinámico para personalidad en español.
+  - `assets/system_prompt.txt` (copia de `python_ai/datasets/system_prompt.txt`) se aplica con la plantilla ChatML del GGUF vía `llama_chat_apply_template`.
+- [x] T1.5 Implementar streaming de tokens (Time to First Token < 2s).
+  - Tokens emitidos por callback C → `NativeCallable.isolateLocal` → `SendPort` → `Stream<String>` en un isolate dedicado. Implementado; el TTFT de 2 s no se cumple en emulador x86_64 sin aceleración (pendiente medir en teléfono arm64).
+
 - [ ] T1.6 Generar y procesar el bloque de pensamiento `<think>` antes de la respuesta externa.
 
 ### Funcionalidad 2: Reconocimiento de voz a texto (STT)
