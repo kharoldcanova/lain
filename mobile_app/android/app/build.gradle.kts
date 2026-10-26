@@ -29,6 +29,13 @@ android {
         versionName = flutter.versionName
     }
 
+    // Las .so de llama.cpp se extraen al instalar: dart:ffi las abre por nombre.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

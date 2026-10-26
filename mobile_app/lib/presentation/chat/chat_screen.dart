@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme.dart';
 import '../../domain/chat/chat_message.dart';
+import '../../domain/chat/chat_state.dart';
 import 'chat_controller.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -22,17 +23,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _send() {
-    ref.read(chatControllerProvider.notifier).send(_input.text);
+    final controller = ref.read(chatControllerProvider.notifier);
+    final text = _input.text;
     _input.clear();
+    controller.send(text);
   }
 
   @override
   Widget build(BuildContext context) {
-    final messages = ref.watch(chatControllerProvider);
+    final state = ref.watch(chatControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('LAIN'),
+        actions: [
+          if (state.generating)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: LainColors.surfaceHigh),
@@ -40,15 +56,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       body: Column(
         children: [
+          if (state.status != EngineStatus.ready) _StatusBanner(state: state),
           Expanded(
-            child: messages.isEmpty
+            child: state.messages.isEmpty
                 ? const _EmptyState()
                 : ListView.builder(
                     reverse: true,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    itemCount: messages.length,
+                    itemCount: state.messages.length,
                     itemBuilder: (context, index) {
-                      final message = messages[messages.length - 1 - index];
+                      final message = state.messages[state.messages.length - 1 - index];
                       return _MessageBubble(message: message);
                     },
                   ),
@@ -62,25 +79,106 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   Expanded(
                     child: TextField(
                       controller: _input,
+                      enabled: state.canSend,
                       minLines: 1,
                       maxLines: 4,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
-                      decoration: const InputDecoration(
-                        hintText: 'Escribe un mensaje…',
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      decoration: InputDecoration(
+                        hintText: state.status == EngineStatus.ready
+                            ? 'Escribe un mensaje…'
+                            : 'Modelo no disponible',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    onPressed: _send,
+                    onPressed: state.canSend ? _send : null,
                     icon: const Icon(Icons.arrow_upward),
                     tooltip: 'Enviar',
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBanner extends ConsumerWidget {
+  const _StatusBanner({required this.state});
+
+  final ChatState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    final (Widget icon, String title, String detail) = switch (state.status) {
+      EngineStatus.starting => (
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          'Iniciando',
+          'Preparando el motor local.',
+        ),
+      EngineStatus.loading => (
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          'Cargando modelo',
+          'Qwen2.5-3B-Instruct en memoria. Puede tardar unos segundos.',
+        ),
+      EngineStatus.missingModel => (
+          const Icon(Icons.folder_off_outlined, size: 20, color: LainColors.primary),
+          'Falta el modelo',
+          'Copia el GGUF con adb:\n'
+              'adb push Qwen2.5-3B-Instruct.Q4_K_M.gguf ${state.modelPath ?? '<ruta>'}',
+        ),
+      EngineStatus.unsupported => (
+          const Icon(Icons.devices_other, size: 20, color: LainColors.primary),
+          'Solo Android',
+          'La inferencia local usa dart:ffi; en web o escritorio no está disponible.',
+        ),
+      EngineStatus.error => (
+          const Icon(Icons.error_outline, size: 20, color: Color(0xFFFF6B6B)),
+          'Error del motor',
+          state.error ?? 'Sin detalle.',
+        ),
+      EngineStatus.ready => (const SizedBox.shrink(), '', ''),
+    };
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: LainColors.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          icon,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.bodyMedium),
+                const SizedBox(height: 4),
+                SelectableText(detail, style: theme.textTheme.bodySmall),
+              ],
             ),
           ),
         ],
@@ -124,6 +222,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
+    final empty = message.text.isEmpty;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -142,7 +241,19 @@ class _MessageBubble extends StatelessWidget {
             bottomRight: Radius.circular(isUser ? 4 : 16),
           ),
         ),
-        child: Text(message.text),
+        child: empty
+            ? const SizedBox(
+                width: 24,
+                height: 16,
+                child: Center(
+                  child: SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            : Text(message.text),
       ),
     );
   }

@@ -3,9 +3,10 @@ description: Asistente local con voz y personalidad en dispositivo (Edge AI).
 version: 0.1.0
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.1.0 <4.0.0"
 
 dependencies:
+  ffi: ^2.2.0
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.4.3
@@ -15,3 +16,10 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/system_prompt.txt

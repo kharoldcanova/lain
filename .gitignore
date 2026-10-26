@@ -4,6 +4,7 @@ mobile_app/.flutter-plugins
 mobile_app/.flutter-plugins-dependencies
 mobile_app/.packages
 mobile_app/build/
+mobile_app/android/build/
 mobile_app/*.iml
 mobile_app/*.ipr
 mobile_app/*.iws
@@ -17,6 +18,7 @@ mobile_app/android/gradlew
 mobile_app/android/gradlew.bat
 mobile_app/android/local.properties
 mobile_app/android/key.properties
+mobile_app/android/app/src/main/jniLibs/
 *.jks
 *.keystore
 
