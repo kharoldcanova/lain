@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- `mobile_app/web/`: plataforma web habilitada para probar la UI en Chrome mientras no hay SDK de Android (`flutter run -d chrome`).
 - `mobile_app/`: proyecto Flutter base para Android/iOS con `flutter_riverpod` 3.4.3, `path_provider` 2.1.6 y `flutter_lints` 6.0.0; esqueleto con tema oscuro propio, `ChatMessage`, `ChatController` y pantalla de chat con estado vacío y burbujas.
 - `mobile_app/test/widget_test.dart`: pruebas de la pantalla de chat (estado vacío, envío de mensaje) y del controlador (ignora mensajes vacíos).
 - `python_ai/test/eval_es.py`: set de 8 casos (identidad, emoción, técnica, incertidumbre, adversarial, cotidiano, ortografía, matemática) con formato, latencia y salida JSON para comparar modelos base.
