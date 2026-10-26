@@ -177,6 +177,10 @@ Para hechos concretos, se salta el reentrenamiento:
 URL/archivo → rag.py ingest → SQLite → disponible al instante
 ```
 
+**Interalimentación** (LLM ↔ VLM ↔ experiencias), el mecanismo que cierra el bucle: si la descripción visual que recibe el LLM de texto no alcanza para responder, este puede pedir al VLM una segunda descripción más específica; y cada turno (texto o `vision_input`) deja una experiencia en `lain_experiences.jsonl` que alimenta SFT/DPO, de modo que el modelo reentrenado produce mejores descripciones y respuestas, que a su vez generan mejores experiencias.
+
+Salvaguardas: filtro de calidad y revisión humana antes de incorporar experiencias al dataset, y evaluación de regresión (`test/check_format.py` + `test/eval_es.py`) en cada versión para detectar degradación.
+
 ---
 
 ## 5. SFT vs DPO vs RAG
@@ -214,9 +218,9 @@ Nota: "STD" no es un término del proyecto; el entrenamiento supervisado es **SF
 |---|---|
 | Entorno Python + Unsloth | ✅ |
 | Fine-tuning SFT + export GGUF | ✅ validado con MiniCPM5-2B (histórico) |
-| Modelo base | 🔄 Qwen2.5-3B-Instruct elegido; reentrenamiento en curso (T11.6) |
+| Modelo base | ✅ Qwen2.5-3B-Instruct reentrenado (QLoRA, 90 pasos, loss 0.15, 636 s); GGUF Q4_K_M 1.8 GB |
 | Inferencia (`infer.py`, `chat.py`) | ✅ sirven cualquier GGUF de `outputs/` |
-| `<think>` en JSON | ✅ 20/20 con MiniCPM5; por medir en Qwen (T11.6) |
+| `<think>` en JSON | ✅ 20/20 bloques `<think>` con JSON válido, 0 sin cerrar con Qwen2.5-3B (T11.6); MiniCPM5 20/20 (histórico) |
 | RAG local (PC) | ✅ |
 | Importador de experiencias | ✅ |
 | DPO | ⏳ T13.3 |

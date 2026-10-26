@@ -57,3 +57,8 @@
 - `validate_dataset.py`: 87/87 filas válidas.
 - `check_format.py`: 20/20 bloques ` thinking` con JSON válido, 0 sin cerrar (baseline con el adaptador anterior: 0/10).
 - `chat.py --hide-thought` oculta el bloque y registra la metacognición completa; `--rag` recupera contexto sin regresión.
+- Reentrenamiento de Qwen2.5-3B-Instruct: QLoRA, 90 pasos, batch 1, `max_seq_length` 1024, solo `personality_es.jsonl`; 636 s, loss final 0.15.
+- Export del GGUF `python_ai/outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf` (1.8 GB).
+- `check_format.py`: 20/20 bloques `<think>` con JSON válido, 0 sin cerrar → PASS con Qwen2.5-3B.
+- `eval_es.py`: 8/8 respuestas con formato válido; latencia 2.5–4.0 s por respuesta en RTX 3050.
+- Español mejoró frente a MiniCPM5-2B (frases completas, respuestas coherentes); quedan errores de concordancia/ortografía y una respuesta que valida el pensamiento negativo, a corregir en el dataset (T11.7).

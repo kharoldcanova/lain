@@ -15,7 +15,8 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - [x] Inferencia funcional verificada sobre el GGUF exportado.
 - [ ] T5.6 Preparar dataset de trazas metacognitivas (`thought_trace`) para SFT/CoT.
 - [ ] T5.7 Preparar pares de preferencia para DPO (`rejected_alternative`).
-- [ ] T5.8 Reentrenar con Qwen2.5-3B-Instruct (solo `personality_es.jsonl`) y exportar GGUF Q4_K_M.
+- [x] T5.8 Reentrenar con Qwen2.5-3B-Instruct (solo `personality_es.jsonl`) y exportar GGUF Q4_K_M.
+  - Corrida completa: 90 pasos, batch 1, `max_seq_length` 1024, 636 s, loss final 0.15 + GGUF `Qwen2.5-3B-Instruct.Q4_K_M.gguf` (1.8 GB).
 
 ### Funcionalidad 7: Ciclo de reentrenamiento offline
 - [ ] T7.1 Definir y documentar el esquema `lain_experiences.jsonl`.
@@ -83,7 +84,9 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - Medición informal del 2026-10-26: MiniCPM5-2B estable en formato (6/6) pero con errores de español (léxico inventado, concordancia, definiciones erróneas).
 - [x] T11.4 Elegir el modelo base y adaptar `finetune.py` / `infer.py`. Decisión: Qwen2.5-3B-Instruct (texto).
 - [x] T11.5 Documentar la decisión, licencia y tamaño en RAM/GGUF. Licencia Qwen Research (no comercial); ~1.9–2.0 GB Q4_K_M.
-- [ ] T11.6 Reentrenar y medir Qwen2.5-3B-Instruct (formato `<think>` + calidad de español) y decidir si se mantiene.
+- [x] T11.6 Reentrenar y medir Qwen2.5-3B-Instruct (formato `<think>` + calidad de español) y decidir si se mantiene.
+  - Se mantiene: `check_format.py` 20/20 bloques `<think>` con JSON válido, 0 sin cerrar (PASS); `eval_es.py` 8/8 respuestas con formato válido, latencia 2.5–4.0 s por respuesta (RTX 3050). Español mejoró frente a MiniCPM5-2B; errores residuales pasan a T11.7.
+- [ ] T11.7 Revisar el dataset para corregir respuestas que validan pensamientos negativos y errores de concordancia.
 
 ### Funcionalidad 12: Exportación de experiencias desde la app
 - [ ] T12.1 Botón «Exportar experiencias» que genere JSONL con el esquema del vault.
@@ -98,6 +101,12 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [ ] T13.3 Pipeline DPO con `rejected_alternative`.
 - [ ] T13.4 Prueba de regresión de personalidad tras cada reentrenamiento.
 - [x] T13.5 `test/check_format.py`: mide la tasa de `<think>` JSON válido (20/20 tras ampliar el dataset).
+
+### Interalimentación
+- [ ] T13.6 Registrar pares de interalimentación (imagen → descripción → respuesta → corrección) en `lain_experiences.jsonl`.
+- [ ] T13.7 Re-consulta al VLM desde el LLM cuando la descripción visual es insuficiente.
+- [ ] T13.8 Filtro de calidad y revisión humana antes de incorporar experiencias al dataset.
+- [ ] T13.9 Evaluación de regresión por versión con `test/check_format.py` y `test/eval_es.py`.
 
 ## Fase 3: Requisitos no funcionales (transversal)
 

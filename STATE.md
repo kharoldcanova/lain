@@ -1,7 +1,7 @@
 # STATE.md
 
 ## Tarea en curso
-Visión en dos pasos validada en PC (MiniCPM-V 4 describe → Qwen razona). Reentrenamiento de Qwen2.5-3B-Instruct en curso; después se miden formato y español (T5.8/T11.6).
+Visión en dos pasos validada en PC (MiniCPM-V 4 describe → Qwen razona). Reentrenamiento de Qwen2.5-3B-Instruct terminado (T5.8/T11.6): GGUF Q4_K_M exportado, formato y español verificados. Quedan por corregir los fallos de español y empatía detectados (T11.7) antes de medir de nuevo.
 
 ## Objetivo actual
 Validar Qwen2.5-3B-Instruct como base de LAIN (español correcto + bloque `<think>` estable) y luego iniciar la Fase 2 (Flutter).
@@ -35,10 +35,15 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - `scripts/vision.py`: visión en dos pasos validada con MiniCPM-V 4 (descripción + OCR) sobre imagen sintética y foto real.
 - MiniCPM-V 4 Q4_K_M + mmproj descargados en `python_ai/models/` (~3.0 GB, ignorado por git).
 - Scripts de prueba/evaluación del modelo movidos de `python_ai/scripts/` a `python_ai/test/` (`check_format.py`, `eval_es.py`, `infer.py`). Comandos desde `python_ai/`: `python test/check_format.py`, `python test/eval_es.py`, `python test/infer.py`.
+- Reentrenamiento de Qwen2.5-3B-Instruct: QLoRA, 90 pasos, batch 1, `max_seq_length` 1024, solo `personality_es.jsonl`; 636 s, loss final 0.15.
+- Export del GGUF `python_ai/outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf` (1.8 GB).
+- Verificación del modelo (T11.6): `check_format.py` 20/20 bloques `<think>` con JSON válido, 0 sin cerrar (PASS); `eval_es.py` 8/8 respuestas con formato válido, latencia 2.5–4.0 s por respuesta en RTX 3050.
+- Calidad del español mejoró frente a MiniCPM5-2B (frases completas, respuestas coherentes), pero siguen errores («Soyo soy es un modelo…», «los grupos más avances», corrección ortográfica equivocada en «Haber si mañana…») y una respuesta que valida el pensamiento negativo («No sirves para nada») en vez de acompañarlo → dataset a revisar en T11.7.
 
 ## Próximos pasos
-- T5.8/T11.6: terminar el reentrenamiento de Qwen, exportar GGUF y correr `test/check_format.py` + `test/eval_es.py`.
+- T11.7: revisar el dataset (respuestas que validan pensamientos negativos, concordancia y ortografía) y medir de nuevo con `test/check_format.py` + `test/eval_es.py` tras corregirlo.
 - T9: portar la visión en dos pasos a la app (cámara, liberar VLM antes del LLM).
-- T11.2/T11.3: set corto de evaluación en español para comparar MiniCPM5 vs Qwen2.5 y registrar resultados.
+- T11.3 (resto): comparar Qwen2.5-3B contra los candidatos restantes (Salamandra-2B, EuroLLM-1.7B, Qwen3-1.7B, Gemma-3-1B) con `test/eval_es.py` y registrar resultados.
 - Fase 2: T1.1 configurar Flutter y T1.2 puente FFI para llama.cpp con el GGUF de Qwen.
+- Interalimentación (T13.6–T13.9): cerrar el bucle de mejora LLM ↔ VLM ↔ experiencias — el LLM re-consulta al VLM cuando la descripción visual no alcanza, cada turno deja una experiencia en `lain_experiences.jsonl` que alimenta SFT/DPO, con filtro de calidad, revisión humana y evaluación de regresión por versión.
 - Nuevas líneas (ver TASKS.md): enrutador Laya/BMP, visión en dos pasos con MiniCPM-V 4, trazas `<think>`, persistencia `lain_experiences.jsonl` y ciclo SFT/CoT + DPO.

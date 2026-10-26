@@ -100,6 +100,9 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
 - Formato JSON Lines estandarizado con campos: id, timestamp, trigger_type, context (user_input, laya_decision, has_multimodal_input), metacognition (thought_trace, prior_belief, belief_shift, axiom_alignment_check), response (model_output, user_reaction_score), training_metadata (suitable_for_sft, suitable_for_dpo, rejected_alternative).
 - Reentrenamiento en PC con Unsloth: SFT/CoT sobre pares thought_trace/model_output; DPO sobre interacciones corregidas (rejected_alternative).
 - Exportación y re-despliegue: cuantización a GGUF Q4_K_M para redistribuir como versión evolucionada de LAIN.
+- **Interalimentación (LLM ↔ VLM ↔ experiencias):** si la descripción del VLM no alcanza para responder, el LLM de texto puede re-consultarlo pidiendo una segunda descripción más específica; cada turno (texto o `vision_input`) deja una experiencia en `lain_experiences.jsonl` que alimenta SFT/DPO.
+- El modelo reentrenado produce mejores descripciones y respuestas, que a su vez generan mejores experiencias: el bucle se retroalimenta.
+- Salvaguardas: filtro de calidad y revisión humana antes de incorporar experiencias al dataset, y evaluación de regresión (`test/check_format.py` + `test/eval_es.py`) en cada versión para detectar degradación.
 
 ## Estructura de Directorios Prevista
 
