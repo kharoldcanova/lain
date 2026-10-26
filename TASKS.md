@@ -28,7 +28,8 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 ## Fase 2: Conexión con la app (Flutter)
 
 ### Funcionalidad 1: Inferencia de texto local
-- [ ] T1.1 Configurar proyecto Flutter en `mobile_app/` con dependencias base.
+- [x] T1.1 Configurar proyecto Flutter en `mobile_app/` con dependencias base.
+  - `flutter create` (android/ios), `flutter_riverpod`, `path_provider` y `flutter_lints`; esqueleto con `main.dart`, `app.dart`, `core/theme.dart`, `domain/chat/chat_message.dart` y `presentation/chat/`; `flutter analyze` limpio y 3 pruebas en verde.
 - [ ] T1.2 Integrar puente FFI para llama.cpp (bindings Dart ↔ C++).
 - [ ] T1.3 Cargar el GGUF de Qwen2.5-3B-Instruct desde almacenamiento local.
 - [ ] T1.4 Inyectar System Prompt dinámico para personalidad en español.
@@ -67,6 +68,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [x] T9.4 Permitir que `<think>` reflexione sobre la descripción visual (validado en PC).
 - [ ] T9.5 Medir RAM del VLM y confirmar RNF03 (< 3.5 GB).
 - [ ] T9.6 Liberar el VLM antes de cargar el LLM en el celular (carga secuencial).
+- [ ] T9.7 Pedir la descripción del VLM en inglés y dejar que Qwen la traduzca: MiniCPM-V 4 arrastra errores en español («conductor's», «un blusa»).
 
 ### Funcionalidad 10: Conocimiento local (RAG)
 - [x] T10.1 Script RAG en PC: ingesta, chunking, embeddings y SQLite (`scripts/rag.py`).

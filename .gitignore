@@ -9,8 +9,6 @@ mobile_app/*.ipr
 mobile_app/*.iws
 mobile_app/.idea/
 mobile_app/*.swp
-mobile_app/*.lock
-mobile_app/pubspec.lock
 
 # Android (mobile_app)
 mobile_app/android/.gradle/

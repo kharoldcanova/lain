@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- `mobile_app/`: proyecto Flutter base para Android/iOS con `flutter_riverpod` 3.4.3, `path_provider` 2.1.6 y `flutter_lints` 6.0.0; esqueleto con tema oscuro propio, `ChatMessage`, `ChatController` y pantalla de chat con estado vacío y burbujas.
+- `mobile_app/test/widget_test.dart`: pruebas de la pantalla de chat (estado vacío, envío de mensaje) y del controlador (ignora mensajes vacíos).
 - `python_ai/test/eval_es.py`: set de 8 casos (identidad, emoción, técnica, incertidumbre, adversarial, cotidiano, ortografía, matemática) con formato, latencia y salida JSON para comparar modelos base.
 - `python_ai/scripts/vision.py`: visión en dos pasos (MiniCPM-V 4 describe la imagen y Qwen razona sobre el texto), con `--caption-only`, registro `vision_input` y `has_multimodal_input: true`.
 - `python_ai/README.md`: sección «Visión (dos pasos)» con descarga de MiniCPM-V 4 y ejemplos de uso.
@@ -29,6 +31,7 @@
 - Dataset SFT ampliado de 7 a 87 ejemplos (saludos, acompañamiento emocional, identidad, técnica, filosofía, cotidiano y adversariales).
 
 ### Changed
+- `.gitignore`: se deja de ignorar `mobile_app/pubspec.lock`; las apps Flutter versionan su lockfile.
 - Scripts de prueba y evaluación del modelo movidos de `python_ai/scripts/` a `python_ai/test/` (`check_format.py`, `eval_es.py`, `infer.py`); se actualizaron las rutas de los comandos en la documentación.
 - Multimodalidad rediseñada a dos pasos: se descarta compartir embeddings visuales con el LLM; MiniCPM-V 4 (GGUF Q4_K_M + `mmproj`) genera descripción + OCR y ese texto entra al prompt de Qwen. VLM y LLM se cargan en secuencia para no sumar RAM.
 - `chat.py`: `log_experience` acepta `trigger_type` y `has_multimodal_input` (por defecto `chat_message` / `false`).
