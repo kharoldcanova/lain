@@ -139,11 +139,19 @@ class _StatusBanner extends ConsumerWidget {
           'Cargando modelo',
           'Qwen2.5-3B-Instruct en memoria. Puede tardar unos segundos.',
         ),
+      EngineStatus.preparingModel => (
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          'Preparando el modelo',
+          'Copiando el GGUF incluido en la app. Solo ocurre la primera vez.',
+        ),
       EngineStatus.missingModel => (
           const Icon(Icons.folder_off_outlined, size: 20, color: LainColors.primary),
           'Falta el modelo',
-          'Copia el GGUF con adb:\n'
-              'adb push Qwen2.5-3B-Instruct.Q4_K_M.gguf ${state.modelPath ?? '<ruta>'}',
+          'No se encontró el GGUF en ${state.modelPath ?? '<ruta>'}',
         ),
       EngineStatus.unsupported => (
           const Icon(Icons.devices_other, size: 20, color: LainColors.primary),
@@ -178,6 +186,22 @@ class _StatusBanner extends ConsumerWidget {
                 Text(title, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 SelectableText(detail, style: theme.textTheme.bodySmall),
+                if (state.progress != null) ...[
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: state.progress,
+                      minHeight: 6,
+                      backgroundColor: LainColors.surfaceHigh,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${(state.progress! * 100).toStringAsFixed(0)} %',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
               ],
             ),
           ),

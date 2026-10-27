@@ -36,6 +36,12 @@ android {
         }
     }
 
+    // El GGUF va como asset sin comprimir: AssetManager.open() en streaming lo
+    // necesita y evita descomprimir 1.9 GB al copiarlo a files/models.
+    androidResources {
+        noCompress += "gguf"
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

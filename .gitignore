@@ -5,6 +5,8 @@ mobile_app/.flutter-plugins-dependencies
 mobile_app/.packages
 mobile_app/build/
 mobile_app/android/build/
+# Modelo empaquetado en el APK: 1.93 GB, se copia a mano desde python_ai/outputs/
+mobile_app/assets/models/
 mobile_app/*.iml
 mobile_app/*.ipr
 mobile_app/*.iws

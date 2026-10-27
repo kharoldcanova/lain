@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/llm/lain_engine.dart';
+import '../../data/llm/model_installer.dart';
 import '../../data/llm/model_store.dart';
 import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
@@ -24,6 +25,11 @@ final localInferenceProvider = Provider<bool>(
 final modelLocatorProvider = Provider<Future<ModelLocation> Function()>(
   (ref) => locateModel,
 );
+
+final modelInstallerProvider = Provider<ModelInstaller>(
+  (ref) => AssetModelInstaller(),
+);
+
 
 final systemPromptProvider = FutureProvider<String>((ref) async {
   return rootBundle.loadString('assets/system_prompt.txt');
@@ -49,15 +55,34 @@ class ChatController extends Notifier<ChatState> {
     state = state.copyWith(status: EngineStatus.loading);
     try {
       final location = await ref.read(modelLocatorProvider)();
-      final file = location.file;
+      var file = location.file;
+
       if (file == null) {
+        // Primer arranque: el GGUF viene dentro del APK y se copia aquí.
         state = state.copyWith(
-          status: EngineStatus.missingModel,
+          status: EngineStatus.preparingModel,
           modelPath: location.expectedPath,
+          progress: 0,
         );
-        return;
+        await ref.read(modelInstallerProvider).install(
+          assetPath: modelAssetPath,
+          targetPath: location.expectedPath,
+          onProgress: (progress) {
+            state = state.copyWith(progress: progress);
+          },
+        );
+        file = File(location.expectedPath);
+        if (!await file.exists()) {
+          state = state.copyWith(
+            status: EngineStatus.missingModel,
+            modelPath: location.expectedPath,
+            clearProgress: true,
+          );
+          return;
+        }
       }
 
+      state = state.copyWith(status: EngineStatus.loading, clearProgress: true);
       await ref.read(lainEngineProvider).loadModel(file.path);
       state = state.copyWith(status: EngineStatus.ready, modelPath: file.path);
     } on Object catch (error) {
