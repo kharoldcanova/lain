@@ -1,10 +1,10 @@
 # STATE.md
 
 ## Tarea en curso
-Fase 2 avanzada: la app Flutter ya hace inferencia real en Android con el GGUF de Qwen2.5-3B-Instruct vía `llama.cpp` + `dart:ffi` (T1.2–T1.5), verificado en emulador x86_64 (carga, streaming y respuesta con bloque `think`). Sigue pendiente medir rendimiento en un teléfono arm64 real y procesar el `think` antes de mostrarlo (T1.6). En paralelo, la calidad del modelo sigue abierta (T11.7).
+Fase 2 avanzada: la app Flutter ya hace inferencia real en Android con el GGUF de Qwen2.5-3B-Instruct empaquetado en el APK (T1.2–T1.6), verificado: APK release 1.96 GB con el GGUF y las `.so` para arm64-v8a y x86_64, `flutter analyze` limpio, 5 pruebas en verde. Sigue pendiente procesar el bloque `think` antes de mostrarlo (T1.7) y medir latencia en un teléfono arm64 real (T1.8). En paralelo, la calidad del modelo sigue abierta (T11.7).
 
 ## Objetivo actual
-Cerrar T1.6 (parsear/ocultar el bloque `think` en la UI) y medir latencia real en hardware arm64; después seguir con STT (Fase 2, Funcionalidad 2).
+Cerrar T1.7 (parsear/ocultar el bloque `think` en la UI) y T1.8 (medir latencia real en hardware arm64); después seguir con STT (Fase 2, Funcionalidad 2).
 
 
 ## Objetivo anterior

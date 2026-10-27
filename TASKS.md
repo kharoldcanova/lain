@@ -38,6 +38,10 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - `assets/system_prompt.txt` (copia de `python_ai/datasets/system_prompt.txt`) se aplica con la plantilla ChatML del GGUF vía `llama_chat_apply_template`.
 - [x] T1.5 Implementar streaming de tokens (Time to First Token < 2s).
   - Tokens emitidos por callback C → `NativeCallable.isolateLocal` → `SendPort` → `Stream<String>` en un isolate dedicado. Implementado; el TTFT de 2 s no se cumple en emulador x86_64 sin aceleración (pendiente medir en teléfono arm64).
+- [x] T1.6 Empaquetar el GGUF en el APK y copiarlo automáticamente al primer arranque.
+  - `assets/models/Qwen2.5-3B-Instruct.Q4_K_M.gguf` incluido en el APK (`androidResources { noCompress += "gguf" }`). `AssetModelInstaller` copia el asset vía `MethodChannel` + `AssetManager` en streaming con barra de progreso (`EngineStatus.preparingModel`). Verificado: APK release 1.96 GB, compilado y empaquetado correctamente.
+- [ ] T1.7 Procesar/ocultar el bloque `think` en la UI antes de mostrarlo.
+- [ ] T1.8 Medir latencia en hardware arm64 real (emulador x86_64 es referencia pesimista).
 
 - [ ] T1.6 Generar y procesar el bloque de pensamiento `<think>` antes de la respuesta externa.
 

@@ -78,7 +78,9 @@ Detalle importante: el puente se genera como **`liblain_llm.so`** (con prefijo
 ## Compilar e instalar el APK
 
 ```bash
-flutter build apk --release      # build/app/outputs/flutter-apk/app-release.apk (~27 MB)
+# El modelo va empaquetado en el APK (~1.9 GB extra).
+# El APK resultante pesa ~2 GB.
+flutter build apk --release      # build/app/outputs/flutter-apk/app-release.apk
 adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
 
@@ -86,21 +88,23 @@ adb install -r build/app/outputs/flutter-apk/app-release.apk
 para que las `.so` se extraigan al instalar: con `extractNativeLibs=false`
 `dlopen("liblain_llm.so")` falla aunque la librería esté dentro del APK.
 
-## Copiar el modelo
+También activa `androidResources { noCompress += "gguf" }` para que el GGUF
+no se comprima dentro del APK y `AssetManager` pueda leerlo en streaming al
+copiarlo al almacenamiento de la app.
 
-El directorio lo debe crear **la app** (es su almacenamiento externo). Si lo
-creas con `adb shell mkdir`, queda propiedad de `shell` y la app no puede leerlo.
+## Primer arranque: el modelo ya está dentro
+
+La app copia el GGUF de `assets/models/` a su almacenamiento externo
+(`files/models/`) automáticamente al arrancar, mostrando una barra de progreso.
+Eso ocurre solo la primera vez; después el modelo ya está en el dispositivo y
+la app arranca directo al chat.
+
+No hace falta `adb push` ni conectar el celular por USB. El usuario solo
+instala el APK y usa la app.
 
 ```bash
-# 1. abre la app una vez (crea files/models y muestra "Falta el modelo")
-adb shell am start -n com.lain.lain_mobile/.MainActivity
-
-# 2. copia el GGUF
-adb push python_ai/outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf \
-  /sdcard/Android/data/com.lain.lain_mobile/files/models/
-
-# 3. reinicia la app
-adb shell am force-stop com.lain.lain_mobile
+# Solo si necesitas forzar una recopia (ej. para actualizar el modelo):
+adb shell rm -rf /sdcard/Android/data/com.lain.lain_mobile/files/models
 adb shell am start -n com.lain.lain_mobile/.MainActivity
 ```
 

@@ -24,6 +24,21 @@
 - El puente se compilaba como `lain_llm.so`; `DynamicLibrary.open('liblain_llm.so')` exige el prefijo `lib`. Ahora se genera como `liblain_llm.so`.
 - Con `extractNativeLibs=false` las `.so` quedaban dentro del APK y `dlopen` fallaba con «library not found»; se fuerza la extracción con `useLegacyPackaging`.
 
+### Added (empaquetado del modelo)
+- `mobile_app/lib/data/llm/model_installer.dart`: `AssetModelInstaller` que copia el GGUF de `assets/models/` al almacenamiento de la app vía `MethodChannel` + `AssetManager` en streaming, reportando progreso 0..1.
+- `mobile_app/android/app/src/main/kotlin/com/lain/lain_mobile/MainActivity.kt`: canal `com.lain.lain_mobile/model` con método `copyAsset` que copia el asset en streaming con `FileOutputStream` y `fd.sync()`.
+- `mobile_app/assets/models/Qwen2.5-3B-Instruct.Q4_K_M.gguf`: modelo empaquetado en el APK (1.93 GB, ignorado por git).
+- `mobile_app/lib/data/llm/model_store.dart`: constante `modelAssetPath` con la ruta del asset dentro del APK.
+- `mobile_app/test/widget_test.dart`: pruebas de `ProviderContainer` para copia del modelo (éxito y falla) usando `FakeInstaller`.
+
+### Changed
+- `mobile_app/lib/presentation/chat/chat_controller.dart`: al arrancar, si no hay GGUF en `files/models/`, copia el asset empaquetado mostrando barra de progreso (`EngineStatus.preparingModel`) antes de cargar el modelo.
+- `mobile_app/lib/domain/chat/chat_state.dart`: `EngineStatus.preparingModel` y campo `progress` (0..1) en `ChatState`.
+- `mobile_app/lib/presentation/chat/chat_screen.dart`: banner «Preparando el modelo» con `LinearProgressIndicator` y porcentaje durante la copia del asset.
+- `mobile_app/android/app/build.gradle.kts`: `androidResources { noCompress += "gguf" }` para que el GGUF no se comprima dentro del APK.
+- `mobile_app/pubspec.yaml`: asset `assets/models/Qwen2.5-3B-Instruct.Q4_K_M.gguf` registrado.
+- `mobile_app/README.md`: documentado el flujo de empaquetado (APK ~2 GB, copia automática al primer arranque, sin necesidad de `adb push`).
+
 - `mobile_app/web/`: plataforma web habilitada para probar la UI en Chrome mientras no hay SDK de Android (`flutter run -d chrome`).
 - `mobile_app/`: proyecto Flutter base para Android/iOS con `flutter_riverpod` 3.4.3, `path_provider` 2.1.6 y `flutter_lints` 6.0.0; esqueleto con tema oscuro propio, `ChatMessage`, `ChatController` y pantalla de chat con estado vacío y burbujas.
 - `mobile_app/test/widget_test.dart`: pruebas de la pantalla de chat (estado vacío, envío de mensaje) y del controlador (ignora mensajes vacíos).
