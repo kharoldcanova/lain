@@ -44,7 +44,9 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - `lib/domain/chat/think_parser.dart` separa el bloque del texto visible con tolerancia a fragmentos partidos, bloques consecutivos y bloques sin cerrar; `ChatMessage.thought` lo guarda y la burbuja lo muestra en un panel colapsable «Razonamiento». `flutter analyze` limpio y 12 pruebas en verde (6 del parser).
 - [x] T1.9 Persistir el historial del chat en SQLite (`sqflite`).
   - `lib/data/storage/lain_database.dart` (esquema v1, tabla `messages` con `role`, `text`, `thought`, `created_at`) y `lib/data/storage/chat_store.dart` (`loadRecent`, `saveTurn` transaccional, `clear`). El controlador restaura el historial al abrir, guarda cada turno y permite borrarlo con confirmación. Degradación explícita: si la base no abre, el chat funciona sin memoria. 4 pruebas del store con SQLite real (`sqflite_common_ffi`) y 19 en total.
-- [ ] T1.8 Medir latencia en hardware arm64 real (emulador x86_64 es referencia pesimista).
+- [ ] T1.8 Medir y reducir la latencia de respuesta (bloqueante para uso real).
+  - Medido en emulador x86_64: copia del GGUF 18 s (solo la primera vez) y carga del modelo 7–11 s. En el APK arm64 probado en teléfono la respuesta **tarda demasiado**: la latencia es inaceptable para conversación.
+  - Sospecha: prompt de sistema largo (~1.5k tokens) + bloque `[MEMORIA]` + 3B Q4 en CPU. Siguiente paso: registrar `ttft`/`total` por turno en `lain_startup.log`, recortar el prompt y evaluar un modelo menor (T15).
 
 ### Funcionalidad 2: Reconocimiento de voz a texto (STT)
 - [ ] T2.1 Capturar audio del micrófono en Flutter.
@@ -105,7 +107,7 @@ Contexto: Qwen2.5-3B-Instruct Q4_K_M pesa 1.9 GB, lo que obliga a un APK de 1.9 
 
 Pixys es la ruta de aprendizaje para construirlo (vault Obsidian: `Boveda/AI/IA/Proyecto Pixys.md`): MLP en NumPy → self-attention y multi-head → tokenizer BPE → KV cache → cuantización → servidor local con RAG y MCP. Aún no ha comenzado.
 
-- [ ] T15.1 Medir el coste real del modelo actual en el teléfono (tamaño instalado, RAM pico, TTFT) para fijar el objetivo.
+- [ ] T15.1 Medir el coste real del modelo actual en el teléfono (tamaño instalado, RAM pico, TTFT) para fijar el objetivo. Evidencia inicial: la latencia del 3B Q4 en CPU es inaceptable para conversación (ver T1.8).
 - [ ] T15.2 Evaluar modelos pequeños existentes (Qwen3-0.6B, Gemma-3-270M, SmolLM2-360M, Salamandra-2B) con `test/eval_es.py`.
 - [ ] T15.3 Definir el criterio de aceptación: tamaño del GGUF, RAM, TTFT y calidad mínima en español.
 - [ ] T15.4 Avanzar la ruta Pixys en paralelo (Fase 1: perceptrón multicapa en NumPy) sin bloquear LAIN.

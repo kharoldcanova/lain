@@ -4,7 +4,7 @@
 Fase 2 avanzada: la app Flutter ya hace inferencia real en Android con el GGUF de Qwen2.5-3B-Instruct empaquetado en el APK (T1.2–T1.6), verificado: APK release 1.96 GB con el GGUF y las `.so` para arm64-v8a y x86_64, `flutter analyze` limpio, 5 pruebas en verde. T1.7 cerrado (bloque `think` separado y colapsable), T1.9 cerrado (historial en SQLite) y T14 cerrada (memoria persistente estilo Engram: observaciones con FTS5 trigram, deduplicación, creencias del bloque `think`, recall en el prompt y pantalla de revisión). Sigue pendiente medir latencia en un teléfono arm64 real (T1.8). En paralelo, la calidad del modelo sigue abierta (T11.7).
 
 ## Objetivo actual
-Probar el APK en el teléfono (T1.8: latencia real y memoria en uso); después, dar contexto multi-turno al modelo (el puente C solo acepta system+user) y seguir con STT (Fase 2, Funcionalidad 2).
+Medir y reducir la latencia (T1.8): hoy la respuesta tarda demasiado en el teléfono; después, dar contexto multi-turno al modelo (el puente C solo acepta system+user) y seguir con STT (Fase 2, Funcionalidad 2).
 
 
 ## Objetivo anterior
@@ -14,6 +14,7 @@ Validar Qwen2.5-3B-Instruct como base de LAIN (español correcto + bloque `<thin
 LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia funcional (no fenomenológica): GWT, HOT (`<think>`), RPT, percepción visual en dos pasos (MiniCPM-V 4 describe, Qwen razona) y ajuste bayesiano de creencias sobre un núcleo axiomático invariante.
 
 ## Zonas frágiles
+- La copia del GGUF desde los assets usa la ruta física del APK: `flutter_assets/assets/models/...`. `rootBundle` usa la ruta lógica `assets/...`, pero `AssetManager` no: con la ruta lógica la copia falla con «Error del motor».
 - Las `.so` de llama.cpp no se versionan (`jniLibs/` está ignorado): hay que ejecutar `mobile_app/tools/build_llama_android.sh` antes de compilar el APK.
 - El puente debe llamarse `liblain_llm.so` (prefijo `lib`): `dlopen` resuelve por nombre y sin el prefijo falla aunque el archivo exista.
 - El APK necesita `useLegacyPackaging = true`; con `extractNativeLibs=false` las `.so` quedan dentro del APK y `dlopen("liblain_llm.so")` devuelve «library not found».
@@ -26,6 +27,8 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - `outputs/` puede contener varios `.gguf` (MiniCPM y Qwen); los scripts eligen el más reciente por fecha.
 - VLM y LLM no deben convivir en VRAM: el VLM se libera antes de cargar Qwen (~3.0 GB + ~1.9 GB no caben juntos en 6 GB).
 - Entorno Python: requiere Python 3.12 (Unsloth no soporta 3.13+); `torch`/`torchvision` deben ser de la misma build CUDA (cu126).
+- Latencia inaceptable en móvil: Qwen2.5-3B Q4_K_M en CPU responde con una demora muy alta para conversación (reportado al probar el APK arm64). El prompt de sistema (~1.5k tokens) más el bloque `[MEMORIA]` agravan el TTFT; es el argumento principal de T15 (modelo pequeño o propio).
+- El build del APK debe ser `--split-per-abi`: mezclar `--target-platform android-arm64` con `jniLibs` de dos ABIs produce un APK que crashea en x86_64 (`libflutter.so is for EM_AARCH64`).
 - SQLite propio: `package:sqlite3` empaqueta SQLite con FTS5 (no el del sistema); el tokenizer `trigram` exige SQLite ≥ 3.34, por eso no se usa `sqflite`.
 - La memoria se guarda en `getApplicationSupportDirectory()/lain.db`; el historial del chat anterior (vía `sqflite`) no se migra.
 - Dataset local de 87 ejemplos: validar con `validate_dataset.py` antes de cada corrida.
@@ -51,6 +54,8 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - Verificación del modelo (T11.6): `check_format.py` 20/20 bloques `<think>` con JSON válido, 0 sin cerrar (PASS); `eval_es.py` 8/8 respuestas con formato válido, latencia 2.5–4.0 s por respuesta en RTX 3050.
 - App Flutter (T1.1): proyecto creado con plataformas Android/iOS, `flutter_riverpod` 3.4.3, `path_provider` 2.1.6 y `flutter_lints` 6.0.0; esqueleto con tema oscuro propio, modelo `ChatMessage`, `ChatController` (Riverpod) y pantalla de chat; `flutter analyze` sin issues y 3 pruebas en verde.
 - Inferencia local en Android (T1.2–T1.5): llama.cpp `caa8191` compilado para `arm64-v8a` y `x86_64`, puente C `lain_llm.c` → bindings `dart:ffi` → motor en isolate con streaming por `SendPort`; GGUF cargado desde `files/models/` y respuesta real con bloque `think` en emulador x86_64 (APK release 27.4 MB). `flutter analyze` limpio, 4 pruebas de widget en verde y 2 pruebas de integración en dispositivo.
+- Bug cerrado y verificado: el GGUF nunca se copiaba desde T1.6 (`modelAssetPath` sin `flutter_assets/`); en emulador x86_64 la copia tarda 18 s y la carga 7–11 s.
+- Bug cerrado: el GGUF nunca se copiaba porque `modelAssetPath` omitía el prefijo `flutter_assets/`; verificado en emulador x86_64 (copia 18 s, carga 11 s, respuesta con `think` oculto).
 - T14: memoria persistente local estilo Engram sobre `package:sqlite3` (FTS5 trigram): `observations`, `user_prompts`, `memory_relations`; deduplicación por hash, revisión por `topic_key`, recall inyectado en el system prompt y pantalla «Memoria». 44 pruebas en verde.
 - T1.9: historial persistido en SQLite (`lain.db`, tabla `messages`); `SqliteChatStore` con `loadRecent`/`saveTurn`/`clear`, restauración al abrir y botón de limpiar con confirmación. 4 pruebas con SQLite real (ffi) y 19 en total.
 - T1.7: `ThinkParser` separa el bloque `think` del texto visible (fragmentos partidos, bloques consecutivos, sin cierre) y la UI lo muestra en un panel colapsable; 6 pruebas del parser y 12 en total en verde.
