@@ -39,7 +39,8 @@ ChatScreen ──► ChatController ──► LainEngine (Dart)
    `python_ai/datasets/system_prompt.txt`) se aplica con la plantilla ChatML que
    trae el propio GGUF (`llama_chat_apply_template`).
 
-El modelo **no** viaja dentro del APK (1.93 GB). La app lo busca en:
+El modelo **sí** viaja dentro del APK (1.93 GB) y la app lo copia al primer
+arranque en:
 
 ```
 /storage/emulated/0/Android/data/com.lain.lain_mobile/files/models/Qwen2.5-3B-Instruct.Q4_K_M.gguf
@@ -78,11 +79,19 @@ Detalle importante: el puente se genera como **`liblain_llm.so`** (con prefijo
 ## Compilar e instalar el APK
 
 ```bash
-# El modelo va empaquetado en el APK (~1.9 GB extra).
-# El APK resultante pesa ~2 GB.
-flutter build apk --release      # build/app/outputs/flutter-apk/app-release.apk
-adb install -r build/app/outputs/flutter-apk/app-release.apk
+# Un APK por ABI: cada uno lleva solo su libflutter.so y sus .so.
+flutter build apk --release --split-per-abi
+# -> build/app/outputs/flutter-apk/app-arm64-v8a-release.apk   (teléfono)
+# -> build/app/outputs/flutter-apk/app-x86_64-release.apk      (emulador)
+
+adb install -r build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 ```
+
+No usar `--target-platform android-arm64` con las `.so` de `jniLibs/` de ambas
+ABIs: el APK quedaría con `libflutter.so` solo arm64 y las librerías x86_64, y
+en un dispositivo x86_64 el arranque muere con
+`dlopen failed: libflutter.so is for EM_AARCH64 instead of EM_X86_64`.
+`--split-per-abi` evita esa mezcla.
 
 `android/app/build.gradle.kts` activa `packaging { jniLibs { useLegacyPackaging = true } }`
 para que las `.so` se extraigan al instalar: con `extractNativeLibs=false`
@@ -101,6 +110,11 @@ la app arranca directo al chat.
 
 No hace falta `adb push` ni conectar el celular por USB. El usuario solo
 instala el APK y usa la app.
+
+El primer arranque necesita **~2.4 GB libres** además de lo que ocupa el APK
+instalado, porque el GGUF se copia a `files/models/`. Si no alcanzan, la app lo
+avisa y ofrece **Reintentar** y **Ver registro** (`lain_startup.log`, copiable
+al portapapeles) en el banner de error.
 
 ```bash
 # Solo si necesitas forzar una recopia (ej. para actualizar el modelo):

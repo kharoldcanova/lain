@@ -23,6 +23,10 @@
 - `mobile_app/test/chat_store_test.dart`, `memory_store_test.dart`, `belief_capture_test.dart`, `memory_screen_test.dart`: 27 pruebas nuevas (44 en total).
 - `mobile_app/test/think_parser_test.dart`: 6 pruebas del parser (bloque simple, fragmentado, falso positivo, múltiples bloques, sin cierre y sin bloque).
 
+### Fixed
+- `mobile_app/lib/data/llm/model_installer.dart`: `modelAssetPath` apuntaba a `assets/models/…`, pero Flutter empaqueta los assets bajo `assets/flutter_assets/`; `AssetManager` lanzaba `FileNotFoundException` y la copia del GGUF fallaba siempre con «Error del motor». Ahora usa `flutter_assets/assets/models/…`, con prueba de regresión del prefijo.
+- `mobile_app/README.md`: el build recomendado es `--split-per-abi`; `--target-platform android-arm64` con `jniLibs` de dos ABIs genera un APK que crashea en x86_64.
+
 ### Changed
 - `mobile_app/lib/presentation/chat/chat_controller.dart`: providers de motor, localización del modelo y system prompt; el stream de tokens se vuelca en la última burbuja.
 - `mobile_app/lib/presentation/chat/chat_screen.dart`: banner de estado (falta el modelo, solo Android, error del motor), indicador de generación y burbujas con streaming.

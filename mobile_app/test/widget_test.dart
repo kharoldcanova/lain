@@ -316,6 +316,13 @@ void main() {
 
   // --- Pruebas del controlador con ProviderContainer (sin widget tree) ---
 
+  test('la ruta del asset usa el prefijo real del APK', () {
+    // Flutter empaqueta los assets bajo flutter_assets/; sin el prefijo,
+    // AssetManager.open lanza FileNotFoundException y el modelo nunca se copia.
+    expect(modelAssetPath, startsWith('flutter_assets/'));
+    expect(modelAssetPath, endsWith(modelFileName));
+  });
+
   test('copia el modelo empaquetado la primera vez y lo carga', () async {
     final dir = await Directory.systemTemp.createTemp('lain-test');
     addTearDown(() => dir.delete(recursive: true));
@@ -342,7 +349,7 @@ void main() {
     // Espera a que _init() resuelva el estado (loading/preparingModel -> ready/error).
     final state = await _awaitState(container);
 
-    expect(installer.assets, <String>['assets/models/$modelFileName']);
+    expect(installer.assets, <String>[modelAssetPath]);
     expect(installer.targets, <String>[target]);
     expect(engine.loadedPaths, <String>[target]);
     expect(state.status, EngineStatus.ready);

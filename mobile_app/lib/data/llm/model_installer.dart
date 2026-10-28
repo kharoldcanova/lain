@@ -75,5 +75,9 @@ class ModelInstallException implements Exception {
   String toString() => message;
 }
 
-/// Ruta del GGUF dentro del APK.
-const String modelAssetPath = 'assets/models/$modelFileName';
+/// Ruta del GGUF dentro del APK tal como la ve `AssetManager`.
+///
+/// Flutter empaqueta los assets del proyecto bajo `flutter_assets/`, así que
+/// `AssetManager.open("assets/...")` no los encuentra: hay que pedir la ruta
+/// real del APK.
+const String modelAssetPath = 'flutter_assets/assets/models/$modelFileName';
