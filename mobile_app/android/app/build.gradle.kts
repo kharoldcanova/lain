@@ -27,6 +27,12 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Solo ABIs con las .so de llama.cpp compiladas (jniLibs/). Sin este
+        // filtro, --split-per-abi genera un APK armeabi-v7a sin liblain_llm.so.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     // Las .so de llama.cpp se extraen al instalar: dart:ffi las abre por nombre.

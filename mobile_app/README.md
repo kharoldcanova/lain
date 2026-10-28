@@ -83,6 +83,8 @@ Detalle importante: el puente se genera como **`liblain_llm.so`** (con prefijo
 flutter build apk --release --split-per-abi
 # -> build/app/outputs/flutter-apk/app-arm64-v8a-release.apk   (teléfono)
 # -> build/app/outputs/flutter-apk/app-x86_64-release.apk      (emulador)
+# `abiFilters` limita el build a arm64-v8a y x86_64: las demás ABIs no tienen
+# las .so de llama.cpp y darían un APK roto.
 
 adb install -r build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 ```

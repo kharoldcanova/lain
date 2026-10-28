@@ -240,13 +240,22 @@ class ChatController extends Notifier<ChatState> {
             systemPrompt: memory == null ? system : '$system\n\n$memory',
             userMessage: text,
           );
+      final clock = Stopwatch()..start();
+      int? firstTokenMs;
+      var chars = 0;
       await for (final piece in stream) {
+        firstTokenMs ??= clock.elapsedMilliseconds;
+        chars += piece.length;
         parser.add(piece);
         _setLastLain(parser.visible.trim(), thought: parser.thought);
       }
       parser.close();
       _captureBelief(parser.thought);
       final reply = parser.visible.trim();
+      await StartupLog.write(
+        'turno: ttft=${firstTokenMs ?? -1}ms total=${clock.elapsedMilliseconds}ms '
+        'chars=$chars pensamiento=${parser.thought.length}',
+      );
       _setLastLain(
         reply.isEmpty ? 'No supe qué responder. Intenta reformular la pregunta.' : reply,
         thought: parser.thought,
