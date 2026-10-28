@@ -1,6 +1,7 @@
 package com.lain.lain_mobile
 
 import android.content.res.AssetManager
+import android.os.StatFs
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -24,6 +25,13 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
                     copyAsset(asset, target, result)
+                }
+                "freeBytes" -> {
+                    try {
+                        result.success(StatFs(filesDir.path).availableBytes)
+                    } catch (error: Throwable) {
+                        result.error("stat_failed", error.message ?: error.toString(), null)
+                    }
                 }
                 else -> result.notImplemented()
             }

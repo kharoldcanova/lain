@@ -100,6 +100,17 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - Se mantiene: `check_format.py` 20/20 bloques `<think>` con JSON válido, 0 sin cerrar (PASS); `eval_es.py` 8/8 respuestas con formato válido, latencia 2.5–4.0 s por respuesta (RTX 3050). Español mejoró frente a MiniCPM5-2B; errores residuales pasan a T11.7.
 - [ ] T11.7 Revisar el dataset para corregir respuestas que validan pensamientos negativos y errores de concordancia.
 
+### Funcionalidad 15: Modelo propio pequeño y eficiente (Pixys)
+Contexto: Qwen2.5-3B-Instruct Q4_K_M pesa 1.9 GB, lo que obliga a un APK de 1.9 GB, ~2 GB de RAM en uso y una copia inicial de 1.9 GB en el dispositivo. Un modelo de 300M–1B con tokenizer y personalidad propios bajaría el APK por debajo de 700 MB y reduciría el tiempo de arranque y la presión de memoria.
+
+Pixys es la ruta de aprendizaje para construirlo (vault Obsidian: `Boveda/AI/IA/Proyecto Pixys.md`): MLP en NumPy → self-attention y multi-head → tokenizer BPE → KV cache → cuantización → servidor local con RAG y MCP. Aún no ha comenzado.
+
+- [ ] T15.1 Medir el coste real del modelo actual en el teléfono (tamaño instalado, RAM pico, TTFT) para fijar el objetivo.
+- [ ] T15.2 Evaluar modelos pequeños existentes (Qwen3-0.6B, Gemma-3-270M, SmolLM2-360M, Salamandra-2B) con `test/eval_es.py`.
+- [ ] T15.3 Definir el criterio de aceptación: tamaño del GGUF, RAM, TTFT y calidad mínima en español.
+- [ ] T15.4 Avanzar la ruta Pixys en paralelo (Fase 1: perceptrón multicapa en NumPy) sin bloquear LAIN.
+- [ ] T15.5 Decidir entre destilar el 3B actual o entrenar desde cero un modelo propio con tokenizer español.
+
 ### Funcionalidad 14: Memoria persistente local (estilo Engram)
 - [x] T14.1 Migrar el motor a `package:sqlite3` (SQLite empaquetado con FTS5 garantizado) y retirar `sqflite`.
 - [x] T14.2 Esquema v2: `sessions`, `observations` + FTS5 trigram, `user_prompts` + FTS5 y `memory_relations`, con migración desde la v1.

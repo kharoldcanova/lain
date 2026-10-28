@@ -8,6 +8,10 @@ import 'model_store.dart';
 /// carga entero en RAM), así que la copia la hace Android con
 /// `AssetManager.open` y reporta el progreso por un `MethodChannel`.
 abstract interface class ModelInstaller {
+  /// Espacio libre en bytes del almacenamiento donde se copia el modelo.
+  /// Devuelve 0 cuando la plataforma no puede informarlo.
+  Future<int> freeBytes();
+
   Future<void> install({
     required String assetPath,
     required String targetPath,
@@ -20,6 +24,18 @@ class AssetModelInstaller implements ModelInstaller {
       : _channel = channel ?? const MethodChannel('com.lain.lain_mobile/model');
 
   final MethodChannel _channel;
+
+  @override
+  Future<int> freeBytes() async {
+    try {
+      final bytes = await _channel.invokeMethod<int>('freeBytes');
+      return bytes ?? 0;
+    } on PlatformException {
+      return 0;
+    } on MissingPluginException {
+      return 0;
+    }
+  }
 
   @override
   Future<void> install({

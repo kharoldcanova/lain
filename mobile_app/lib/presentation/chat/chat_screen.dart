@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme.dart';
+import '../../data/diagnostics/startup_log.dart';
 import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
 import '../memory/memory_screen.dart';
@@ -189,9 +191,10 @@ class _StatusBanner extends ConsumerWidget {
       EngineStatus.missingModel => (
           const Icon(Icons.folder_off_outlined, size: 20, color: LainColors.primary),
           'Falta el modelo',
-          'No se pudo preparar el GGUF incluido en la app. '
-              'Revisá que queden ~2 GB libres y reinstalá el APK.\n'
-              'Ruta esperada: ${state.modelPath ?? "desconocida"}',
+          state.error ??
+              'No se pudo preparar el GGUF incluido en la app. '
+                  'Revisá que queden ~2.4 GB libres y reinstalá el APK.\n'
+                  'Ruta esperada: ${state.modelPath ?? "desconocida"}',
         ),
       EngineStatus.unsupported => (
           const Icon(Icons.devices_other, size: 20, color: LainColors.primary),
@@ -226,6 +229,24 @@ class _StatusBanner extends ConsumerWidget {
                 Text(title, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 4),
                 SelectableText(detail, style: theme.textTheme.bodySmall),
+                if (state.status == EngineStatus.error ||
+                    state.status == EngineStatus.missingModel) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () => ref
+                            .read(chatControllerProvider.notifier)
+                            .retry(),
+                        child: const Text('Reintentar'),
+                      ),
+                      TextButton(
+                        onPressed: () => _showStartupLog(context),
+                        child: const Text('Ver registro'),
+                      ),
+                    ],
+                  ),
+                ],
                 if (state.progress != null) ...[
                   const SizedBox(height: 10),
                   ClipRRect(
@@ -249,6 +270,39 @@ class _StatusBanner extends ConsumerWidget {
       ),
     );
   }
+}
+
+Future<void> _showStartupLog(BuildContext context) async {
+  final text = await StartupLog.read();
+  if (!context.mounted) return;
+  await showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Registro de arranque'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: SelectableText(
+            text,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: text));
+            Navigator.of(context).pop();
+          },
+          child: const Text('Copiar'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cerrar'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _EmptyState extends StatelessWidget {

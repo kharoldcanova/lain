@@ -8,6 +8,7 @@ import 'package:lain_mobile/app.dart';
 import 'package:lain_mobile/data/llm/lain_engine.dart';
 import 'package:lain_mobile/data/llm/model_installer.dart';
 import 'package:lain_mobile/data/llm/model_store.dart';
+import 'package:lain_mobile/data/diagnostics/startup_log.dart';
 import 'package:lain_mobile/data/storage/chat_store.dart';
 import 'package:lain_mobile/data/storage/lain_database.dart';
 import 'package:lain_mobile/data/storage/memory_store.dart';
@@ -62,6 +63,9 @@ class FakeInstaller implements ModelInstaller {
   final List<String> assets = <String>[];
   final List<String> targets = <String>[];
   final List<double> progress = <double>[];
+
+  @override
+  Future<int> freeBytes() async => 8 * 1024 * 1024 * 1024;
 
   @override
   Future<void> install({
@@ -147,6 +151,8 @@ Widget _app({
 }
 
 void main() {
+  setUpAll(() => StartupLog.enabled = false);
+
   testWidgets('arranca en estado vacío cuando el motor está listo', (tester) async {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();

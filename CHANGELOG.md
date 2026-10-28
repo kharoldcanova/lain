@@ -18,6 +18,7 @@
 - `mobile_app/lib/data/storage/chat_store.dart`: `ChatStore` y `SqliteChatStore` (`loadRecent`, `saveTurn` en transacción, `clear`).
 - `mobile_app/lib/data/storage/memory_store.dart`: memoria estilo Engram — `save` con deduplicación por hash y revisión por `topic_key`, `search` FTS5 por términos, `context` con presupuesto, `pin`, borrado lógico, `savePrompt`, `searchPrompts` y relaciones con `judgeRelation`.
 - `mobile_app/lib/domain/memory/belief_capture.dart`: extrae `prior_belief` y `belief_shift` del JSON del bloque `think` y deriva un `topic_key`.
+- `mobile_app/lib/data/diagnostics/startup_log.dart`: registro de arranque en archivo (`lain_startup.log`) con cada paso de la preparación del modelo y el error con stack.
 - `mobile_app/lib/presentation/memory/memory_screen.dart`: pantalla «Memoria» con búsqueda, fijar, olvidar y resolución de creencias que cambiaron.
 - `mobile_app/test/chat_store_test.dart`, `memory_store_test.dart`, `belief_capture_test.dart`, `memory_screen_test.dart`: 27 pruebas nuevas (44 en total).
 - `mobile_app/test/think_parser_test.dart`: 6 pruebas del parser (bloque simple, fragmentado, falso positivo, múltiples bloques, sin cierre y sin bloque).
@@ -32,7 +33,9 @@
 - `mobile_app/lib/presentation/chat/chat_screen.dart`: acción «Limpiar conversación» con diálogo de confirmación.
 - `mobile_app/pubspec.yaml`: `sqlite3`, `crypto` y `path`; se retiran `sqflite` y `sqflite_common_ffi`.
 - `mobile_app/lib/presentation/chat/chat_controller.dart`: `memoryStoreProvider`; guarda el prompt, inyecta el bloque `[MEMORIA]` en el system prompt y registra la creencia del turno.
-- `mobile_app/lib/presentation/chat/chat_screen.dart`: acción «Memoria» en la AppBar.
+- `mobile_app/lib/presentation/chat/chat_screen.dart`: acción «Memoria» en la AppBar; botones «Reintentar» y «Ver registro» (con copia al portapapeles) en los estados de error.
+- `mobile_app/lib/presentation/chat/chat_controller.dart`: el arranque escribe cada paso en `StartupLog`, comprueba el espacio libre antes de copiar el GGUF (mínimo 2.4 GB) y expone `retry()`.
+- `mobile_app/android/.../MainActivity.kt`: método `freeBytes` del canal para consultar el espacio disponible.
 - `mobile_app/android/app/build.gradle.kts`: `packaging { jniLibs { useLegacyPackaging = true } }` para extraer las `.so` al instalar (`dlopen` por nombre).
 - `mobile_app/pubspec.yaml`: dependencia `ffi`, `integration_test` en dev, assets del system prompt y SDK mínimo `>=3.1.0`.
 
