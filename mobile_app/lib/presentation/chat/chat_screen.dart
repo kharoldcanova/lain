@@ -151,7 +151,9 @@ class _StatusBanner extends ConsumerWidget {
       EngineStatus.missingModel => (
           const Icon(Icons.folder_off_outlined, size: 20, color: LainColors.primary),
           'Falta el modelo',
-          'No se encontró el GGUF en ${state.modelPath ?? '<ruta>'}',
+          'No se pudo preparar el GGUF incluido en la app. '
+              'Revisá que queden ~2 GB libres y reinstalá el APK.\n'
+              'Ruta esperada: ${state.modelPath ?? "desconocida"}',
         ),
       EngineStatus.unsupported => (
           const Icon(Icons.devices_other, size: 20, color: LainColors.primary),
@@ -246,7 +248,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
-    final empty = message.text.isEmpty;
+    final empty = message.text.isEmpty && !message.hasThought;
 
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -277,8 +279,86 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
               )
-            : Text(message.text),
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (message.hasThought)
+                    _ThoughtPanel(thought: message.thought!),
+                  if (message.text.isNotEmpty)
+                    Text(
+                      message.text,
+                      style: const TextStyle(color: LainColors.textPrimary),
+                    ),
+                ],
+              ),
       ),
+    );
+  }
+}
+
+/// Razonamiento `think` del modelo, colapsado por defecto.
+class _ThoughtPanel extends StatefulWidget {
+  const _ThoughtPanel({required this.thought});
+
+  final String thought;
+
+  @override
+  State<_ThoughtPanel> createState() => _ThoughtPanelState();
+}
+
+class _ThoughtPanelState extends State<_ThoughtPanel> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 16,
+                  color: LainColors.textMuted,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Razonamiento',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: LainColors.textMuted,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_expanded)
+          Container(
+            margin: const EdgeInsets.only(top: 6, bottom: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: LainColors.surface,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SelectableText(
+              widget.thought,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                height: 1.4,
+                color: LainColors.textMuted,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

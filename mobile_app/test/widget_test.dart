@@ -126,8 +126,30 @@ void main() {
     expect(engine.prompts, <String>['Hola, LAIN']);
   });
 
-  testWidgets('el controlador ignora mensajes vacíos', (tester) async {
-    await tester.pumpWidget(_app());
+  testWidgets('oculta el bloque think y lo muestra al expandir', (tester) async {
+    const open = '\u003Cthink>';
+    const close = '\u003C/think>';
+    final engine = FakeEngine(
+      pieces: const <String>['$open{"tono":"calido"}', close, 'Hola, soy LAIN.'],
+    );
+    await tester.pumpWidget(_app(engine: engine));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Hola');
+    await tester.tap(find.byTooltip('Enviar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hola, soy LAIN.'), findsOneWidget);
+    expect(find.text('{"tono":"calido"}'), findsNothing);
+    expect(find.text('Razonamiento'), findsOneWidget);
+
+    await tester.tap(find.text('Razonamiento'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('{"tono":"calido"}'), findsOneWidget);
+  });
+
+  testWidgets('el controlador ignora mensajes vacíos', (tester) async {    await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
     final container = ProviderScope.containerOf(

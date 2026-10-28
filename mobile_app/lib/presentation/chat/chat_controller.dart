@@ -10,6 +10,7 @@ import '../../data/llm/model_installer.dart';
 import '../../data/llm/model_store.dart';
 import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
+import '../../domain/chat/think_parser.dart';
 
 final lainEngineProvider = Provider<LainEngine>((ref) {
   final engine = NativeLainEngine();
@@ -105,7 +106,7 @@ class ChatController extends Notifier<ChatState> {
       clearError: true,
     );
 
-    final buffer = StringBuffer();
+    final parser = ThinkParser();
     try {
       final system = await ref.read(systemPromptProvider.future);
       final stream = ref.read(lainEngineProvider).generate(
@@ -113,12 +114,15 @@ class ChatController extends Notifier<ChatState> {
             userMessage: text,
           );
       await for (final piece in stream) {
-        buffer.write(piece);
-        _setLastLain(buffer.toString());
+        parser.add(piece);
+        _setLastLain(parser.visible.trim(), thought: parser.thought);
       }
-      if (buffer.isEmpty) {
-        _setLastLain('No supe qué responder. Intenta reformular la pregunta.');
-      }
+      parser.close();
+      final reply = parser.visible.trim();
+      _setLastLain(
+        reply.isEmpty ? 'No supe qué responder. Intenta reformular la pregunta.' : reply,
+        thought: parser.thought,
+      );
     } on Object catch (error) {
       _setLastLain('No pude responder: $error');
     } finally {
@@ -126,13 +130,14 @@ class ChatController extends Notifier<ChatState> {
     }
   }
 
-  void _setLastLain(String text) {
+  void _setLastLain(String text, {String? thought}) {
     final messages = List<ChatMessage>.of(state.messages);
     if (messages.isEmpty || messages.last.isUser) return;
     messages[messages.length - 1] = ChatMessage(
       role: ChatRole.lain,
       text: text,
       createdAt: messages.last.createdAt,
+      thought: thought,
     );
     state = state.copyWith(messages: messages);
   }

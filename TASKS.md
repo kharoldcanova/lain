@@ -40,10 +40,9 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - Tokens emitidos por callback C → `NativeCallable.isolateLocal` → `SendPort` → `Stream<String>` en un isolate dedicado. Implementado; el TTFT de 2 s no se cumple en emulador x86_64 sin aceleración (pendiente medir en teléfono arm64).
 - [x] T1.6 Empaquetar el GGUF en el APK y copiarlo automáticamente al primer arranque.
   - `assets/models/Qwen2.5-3B-Instruct.Q4_K_M.gguf` incluido en el APK (`androidResources { noCompress += "gguf" }`). `AssetModelInstaller` copia el asset vía `MethodChannel` + `AssetManager` en streaming con barra de progreso (`EngineStatus.preparingModel`). Verificado: APK release 1.96 GB, compilado y empaquetado correctamente.
-- [ ] T1.7 Procesar/ocultar el bloque `think` en la UI antes de mostrarlo.
+- [x] T1.7 Procesar/ocultar el bloque `think` en la UI antes de mostrarlo.
+  - `lib/domain/chat/think_parser.dart` separa el bloque del texto visible con tolerancia a fragmentos partidos, bloques consecutivos y bloques sin cerrar; `ChatMessage.thought` lo guarda y la burbuja lo muestra en un panel colapsable «Razonamiento». `flutter analyze` limpio y 12 pruebas en verde (6 del parser).
 - [ ] T1.8 Medir latencia en hardware arm64 real (emulador x86_64 es referencia pesimista).
-
-- [ ] T1.6 Generar y procesar el bloque de pensamiento `<think>` antes de la respuesta externa.
 
 ### Funcionalidad 2: Reconocimiento de voz a texto (STT)
 - [ ] T2.1 Capturar audio del micrófono en Flutter.
