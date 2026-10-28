@@ -1,10 +1,10 @@
 # STATE.md
 
 ## Tarea en curso
-Fase 2 avanzada: la app Flutter ya hace inferencia real en Android con el GGUF de Qwen2.5-3B-Instruct empaquetado en el APK (T1.2–T1.6), verificado: APK release 1.96 GB con el GGUF y las `.so` para arm64-v8a y x86_64, `flutter analyze` limpio, 5 pruebas en verde. T1.7 cerrado (bloque `think` separado y colapsable) y T1.9 cerrado (historial del chat persistido en SQLite, con borrado confirmado). Sigue pendiente medir latencia en un teléfono arm64 real (T1.8). En paralelo, la calidad del modelo sigue abierta (T11.7).
+Fase 2 avanzada: la app Flutter ya hace inferencia real en Android con el GGUF de Qwen2.5-3B-Instruct empaquetado en el APK (T1.2–T1.6), verificado: APK release 1.96 GB con el GGUF y las `.so` para arm64-v8a y x86_64, `flutter analyze` limpio, 5 pruebas en verde. T1.7 cerrado (bloque `think` separado y colapsable), T1.9 cerrado (historial en SQLite) y T14 cerrada (memoria persistente estilo Engram: observaciones con FTS5 trigram, deduplicación, creencias del bloque `think`, recall en el prompt y pantalla de revisión). Sigue pendiente medir latencia en un teléfono arm64 real (T1.8). En paralelo, la calidad del modelo sigue abierta (T11.7).
 
 ## Objetivo actual
-Cerrar T1.8 (medir latencia real en hardware arm64, requiere un teléfono conectado); después, dar contexto multi-turno al modelo (el puente C solo acepta system+user) y seguir con STT (Fase 2, Funcionalidad 2).
+Probar el APK en el teléfono (T1.8: latencia real y memoria en uso); después, dar contexto multi-turno al modelo (el puente C solo acepta system+user) y seguir con STT (Fase 2, Funcionalidad 2).
 
 
 ## Objetivo anterior
@@ -26,6 +26,8 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - `outputs/` puede contener varios `.gguf` (MiniCPM y Qwen); los scripts eligen el más reciente por fecha.
 - VLM y LLM no deben convivir en VRAM: el VLM se libera antes de cargar Qwen (~3.0 GB + ~1.9 GB no caben juntos en 6 GB).
 - Entorno Python: requiere Python 3.12 (Unsloth no soporta 3.13+); `torch`/`torchvision` deben ser de la misma build CUDA (cu126).
+- SQLite propio: `package:sqlite3` empaqueta SQLite con FTS5 (no el del sistema); el tokenizer `trigram` exige SQLite ≥ 3.34, por eso no se usa `sqflite`.
+- La memoria se guarda en `getApplicationSupportDirectory()/lain.db`; el historial del chat anterior (vía `sqflite`) no se migra.
 - Dataset local de 87 ejemplos: validar con `validate_dataset.py` antes de cada corrida.
 
 ## Completado
@@ -49,6 +51,7 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - Verificación del modelo (T11.6): `check_format.py` 20/20 bloques `<think>` con JSON válido, 0 sin cerrar (PASS); `eval_es.py` 8/8 respuestas con formato válido, latencia 2.5–4.0 s por respuesta en RTX 3050.
 - App Flutter (T1.1): proyecto creado con plataformas Android/iOS, `flutter_riverpod` 3.4.3, `path_provider` 2.1.6 y `flutter_lints` 6.0.0; esqueleto con tema oscuro propio, modelo `ChatMessage`, `ChatController` (Riverpod) y pantalla de chat; `flutter analyze` sin issues y 3 pruebas en verde.
 - Inferencia local en Android (T1.2–T1.5): llama.cpp `caa8191` compilado para `arm64-v8a` y `x86_64`, puente C `lain_llm.c` → bindings `dart:ffi` → motor en isolate con streaming por `SendPort`; GGUF cargado desde `files/models/` y respuesta real con bloque `think` en emulador x86_64 (APK release 27.4 MB). `flutter analyze` limpio, 4 pruebas de widget en verde y 2 pruebas de integración en dispositivo.
+- T14: memoria persistente local estilo Engram sobre `package:sqlite3` (FTS5 trigram): `observations`, `user_prompts`, `memory_relations`; deduplicación por hash, revisión por `topic_key`, recall inyectado en el system prompt y pantalla «Memoria». 44 pruebas en verde.
 - T1.9: historial persistido en SQLite (`lain.db`, tabla `messages`); `SqliteChatStore` con `loadRecent`/`saveTurn`/`clear`, restauración al abrir y botón de limpiar con confirmación. 4 pruebas con SQLite real (ffi) y 19 en total.
 - T1.7: `ThinkParser` separa el bloque `think` del texto visible (fragmentos partidos, bloques consecutivos, sin cierre) y la UI lo muestra en un panel colapsable; 6 pruebas del parser y 12 en total en verde.
 - Calidad del español mejoró frente a MiniCPM5-2B (frases completas, respuestas coherentes), pero siguen errores («Soyo soy es un modelo…», «los grupos más avances», corrección ortográfica equivocada en «Haber si mañana…») y una respuesta que valida el pensamiento negativo («No sirves para nada») en vez de acompañarlo → dataset a revisar en T11.7.

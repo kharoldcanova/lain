@@ -100,6 +100,16 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - Se mantiene: `check_format.py` 20/20 bloques `<think>` con JSON válido, 0 sin cerrar (PASS); `eval_es.py` 8/8 respuestas con formato válido, latencia 2.5–4.0 s por respuesta (RTX 3050). Español mejoró frente a MiniCPM5-2B; errores residuales pasan a T11.7.
 - [ ] T11.7 Revisar el dataset para corregir respuestas que validan pensamientos negativos y errores de concordancia.
 
+### Funcionalidad 14: Memoria persistente local (estilo Engram)
+- [x] T14.1 Migrar el motor a `package:sqlite3` (SQLite empaquetado con FTS5 garantizado) y retirar `sqflite`.
+- [x] T14.2 Esquema v2: `sessions`, `observations` + FTS5 trigram, `user_prompts` + FTS5 y `memory_relations`, con migración desde la v1.
+- [x] T14.3 Guardado con deduplicación por `normalized_hash` (`duplicate_count`) y revisión por `topic_key` (`revision_count`).
+- [x] T14.4 Búsqueda léxica FTS5 por términos (OR) con respaldo `LIKE` y tolerancia a sintaxis inválida.
+- [x] T14.5 Contexto para el prompt: fijadas + coincidencias + recientes, sin repetir y con presupuesto de caracteres.
+- [x] T14.6 Captura desde el chat: prompts del usuario y creencias (`prior_belief` → `belief_shift`) del bloque `think`.
+- [x] T14.7 Relaciones `supersedes` con `judgment_status='pending'` cuando cambia una creencia del mismo `topic_key`.
+- [x] T14.8 Pantalla «Memoria»: buscar, fijar, olvidar y resolver creencias que cambiaron.
+
 ### Funcionalidad 12: Exportación de experiencias desde la app
 - [ ] T12.1 Botón «Exportar experiencias» que genere JSONL con el esquema del vault.
 - [ ] T12.2 Compartir/guardar con el selector del sistema y nombre con fecha.

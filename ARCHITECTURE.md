@@ -9,7 +9,7 @@
 
 ## Marcos teóricos aplicados
 
-- **GWT (Global Workspace Theory):** La interacción entre Whisper (STT), Laya/BMP (clasificador), memoria (SQLite/Hive) y Qwen2.5-3B-Instruct (llama.cpp) emula la transmisión de datos a través de un espacio de trabajo global.
+- **GWT (Global Workspace Theory):** La interacción entre Whisper (STT), Laya/BMP (clasificador), memoria (SQLite) y Qwen2.5-3B-Instruct (llama.cpp) emula la transmisión de datos a través de un espacio de trabajo global.
 - **HOT (Higher-Order Theories):** El bloque `<think>` genera monitoreo interno sobre intención emocional, incertidumbre y sesgos antes de la respuesta externa.
 - **RPT (Recurrent Processing Theory):** Laya/BMP evalúa el impacto de una respuesta previa y ajusta la traza de razonamiento antes de responder (bucles recurrentes).
 
@@ -53,7 +53,7 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
 ## Arquitectura de Capas
 
 - **Capa de Presentación (Dart/Flutter):** Pantallas de chat, ajustes, gestión de estado con BLoC o Riverpod.
-- **Capa de Negocio / Dominio:** Casos de uso para historiales locales (Hive/SQLite), orquestación de prompts, persistencia de experiencias.
+- **Capa de Negocio / Dominio:** Casos de uso para historiales y memoria local (SQLite), orquestación de prompts, persistencia de experiencias.
 - **Capa de Infraestructura / Nativos (C/C++ / FFI):** Enlaces directos a llama.cpp (Qwen2.5-3B-Instruct) y whisper.cpp compilados como bibliotecas nativas (.so para Android); enrutador Laya/BMP.
 - **Capa de Apoyo Externo (Python - PC):** Scripts en Unsloth/PyTorch para SFT/CoT y DPO sobre trazas metacognitivas.
 
@@ -123,7 +123,7 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
 │   │   └── icons/            # Iconos y assets visuales de UI
 │   ├── lib/                  # Código fuente en Dart
 │   │   ├── core/             # Configuraciones globales, temas y constantes
-│   │   ├── data/             # Repositorios, fuentes de datos locales (Hive/SQLite)
+│   │   ├── data/             # Repositorios y fuentes locales (SQLite)
 │   │   ├── domain/           # Entidades y casos de uso
 │   │   └── presentation/     # Vistas (Widgets), estados (BLoC/Riverpod)
 │   └── pubspec.yaml          # Dependencias de Flutter

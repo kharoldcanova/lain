@@ -12,12 +12,14 @@ LAIN tiene **dos memorias** que no se mezclan:
 |---|---|---|---|
 | **Pesos** (modelo) | `.gguf` en el celular | estilo, tono, personalidad, formato de `<think>` | reentrenamiento (SFT/DPO) en la PC |
 | **Semántica** (RAG) | SQLite en el celular | hechos, documentos, conceptos descargados | indexar; sin reentrenar |
+| **Vivencial** (memoria) | SQLite en el celular (`lain.db`) | creencias, preferencias, prompts previos | automático, con revisión |
 
 Regla práctica:
 
 - **Hechos nuevos** → RAG.
 - **Cómo habla y piensa** → reentrenamiento.
 - **Correcciones puntuales** → DPO.
+- **Lo vivido con el usuario** (creencias, preferencias, temas) → memoria SQLite local.
 
 ```text
 ┌──────────────── CELULAR (runtime, offline) ────────────────┐
@@ -136,7 +138,8 @@ Ubicación: `mobile_app/` (Flutter). **Estado actual: estructura creada, sin có
 
 1. **Entrada**: texto, micrófono (`whisper.cpp`) o cámara (`mmproj` + modelo de visión).
 2. **Laya/BMP (~15 ms)**: clasifica carga emocional e intención y elige la directriz de tono.
-3. **RAG**: convierte la consulta en embedding, recupera los `top-k` fragmentos de SQLite e inyecta el contexto.
+3. **Memoria**: recupera de `lain.db` las observaciones fijadas, las recientes y las que coinciden con la consulta (FTS5 trigram) e inyecta un bloque `[MEMORIA]` en el system prompt.
+4. **RAG**: convierte la consulta en embedding, recupera los `top-k` fragmentos de SQLite e inyecta el contexto.
 4. **Inferencia**: `llama.cpp` genera primero el bloque `<think>` (JSON de metacognición) y luego la respuesta.
 5. **Salida**: texto en pantalla y voz por TTS, en streaming por oraciones.
 6. **Registro**: guarda la experiencia en `lain_experiences.jsonl` desde un isolate en segundo plano.

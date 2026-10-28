@@ -9,9 +9,12 @@ import 'package:lain_mobile/data/llm/lain_engine.dart';
 import 'package:lain_mobile/data/llm/model_installer.dart';
 import 'package:lain_mobile/data/llm/model_store.dart';
 import 'package:lain_mobile/data/storage/chat_store.dart';
+import 'package:lain_mobile/data/storage/lain_database.dart';
+import 'package:lain_mobile/data/storage/memory_store.dart';
 import 'package:lain_mobile/domain/chat/chat_message.dart';
 import 'package:lain_mobile/domain/chat/chat_state.dart';
 import 'package:lain_mobile/presentation/chat/chat_controller.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 class FakeEngine implements LainEngine {
   FakeEngine({this.pieces = const <String>['Hola, ', 'soy LAIN.']});
@@ -19,6 +22,7 @@ class FakeEngine implements LainEngine {
   final List<String> pieces;
   bool _ready = false;
   final List<String> prompts = <String>[];
+  final List<String> systems = <String>[];
   final List<String> loadedPaths = <String>[];
 
   @override
@@ -40,6 +44,7 @@ class FakeEngine implements LainEngine {
     int seed = 42,
   }) async* {
     prompts.add(userMessage);
+    systems.add(systemPrompt);
     for (final piece in pieces) {
       yield piece;
     }
@@ -90,24 +95,27 @@ class FakeChatStore implements ChatStore {
   int clears = 0;
 
   @override
-  Future<List<ChatMessage>> loadRecent({int limit = 200}) async =>
+  List<ChatMessage> loadRecent({int limit = 200}) =>
       List<ChatMessage>.of(messages);
 
   @override
-  Future<void> saveTurn({
-    required ChatMessage user,
-    required ChatMessage lain,
-  }) async {
+  void saveTurn({required ChatMessage user, required ChatMessage lain}) {
     messages
       ..add(user)
       ..add(lain);
   }
 
   @override
-  Future<void> clear() async {
+  void clear() {
     clears++;
     messages.clear();
   }
+}
+
+MemoryStore _memoryStore() {
+  final db = sqlite3.openInMemory();
+  LainDatabase.migrate(db);
+  return MemoryStore(db);
 }
 
 Widget _app({
@@ -115,11 +123,13 @@ Widget _app({
   ModelLocation? location,
   ModelInstaller? installer,
   FakeChatStore? store,
+  MemoryStore? memory,
 }) {
   return ProviderScope(
     overrides: [
       lainEngineProvider.overrideWithValue(engine ?? FakeEngine()),
       chatStoreProvider.overrideWith((ref) async => store ?? FakeChatStore()),
+      memoryStoreProvider.overrideWith((ref) async => memory ?? _memoryStore()),
       localInferenceProvider.overrideWithValue(true),
       modelInstallerProvider.overrideWithValue(installer ?? FakeInstaller()),
       modelLocatorProvider.overrideWithValue(
@@ -204,6 +214,52 @@ void main() {
     expect(find.text('Hola, soy LAIN.'), findsOneWidget);
   });
 
+  testWidgets('inyecta la memoria recuperada en el system prompt', (tester) async {
+    final memory = _memoryStore();
+    memory.save(
+      type: MemoryType.fact,
+      title: 'Sobre la luna',
+      content: 'La luna le recuerda a su abuela.',
+    );
+    final engine = FakeEngine();
+    await tester.pumpWidget(_app(engine: engine, memory: memory));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '¿Qué ves en la luna?');
+    await tester.tap(find.byTooltip('Enviar'));
+    await tester.pumpAndSettle();
+
+    expect(engine.systems.last, contains('[MEMORIA]'));
+    expect(engine.systems.last, contains('Sobre la luna'));
+  });
+
+  testWidgets('guarda una creencia desde el bloque think', (tester) async {
+    const open = '\u003Cthink>';
+    const close = '\u003C/think>';
+    final engine = FakeEngine(
+      pieces: const <String>[
+        '$open{"thought_trace": "El usuario habla de la luna y su abuela.", '
+            '"prior_belief": "La luna es solo belleza.", '
+            '"belief_shift": "La luna también es memoria familiar.", '
+            '"axiom_alignment_check": "Alineado."}$close',
+        'Qué bonito recuerdo.',
+      ],
+    );
+    final memory = _memoryStore();
+    await tester.pumpWidget(_app(engine: engine, memory: memory));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Mi abuela y la luna');
+    await tester.tap(find.byTooltip('Enviar'));
+    await tester.pumpAndSettle();
+
+    final beliefs = memory.search('abuela');
+    expect(beliefs, hasLength(1));
+    expect(beliefs.first.type, MemoryType.belief);
+    expect(beliefs.first.content, contains('memoria familiar'));
+    expect(memory.searchPrompts('abuela'), hasLength(1));
+  });
+
   testWidgets('persiste cada turno en el store', (tester) async {
     final store = FakeChatStore();
     await tester.pumpWidget(_app(store: store));
@@ -263,6 +319,7 @@ void main() {
       overrides: [
         lainEngineProvider.overrideWithValue(FakeEngine()),
         chatStoreProvider.overrideWith((ref) async => FakeChatStore()),
+        memoryStoreProvider.overrideWith((ref) async => _memoryStore()),
         localInferenceProvider.overrideWithValue(true),
         modelInstallerProvider.overrideWithValue(FakeInstaller()),
         modelLocatorProvider.overrideWithValue(
@@ -290,6 +347,7 @@ void main() {
       overrides: [
         lainEngineProvider.overrideWithValue(FakeEngine()),
         chatStoreProvider.overrideWith((ref) async => FakeChatStore()),
+        memoryStoreProvider.overrideWith((ref) async => _memoryStore()),
         localInferenceProvider.overrideWithValue(true),
         modelInstallerProvider.overrideWithValue(
           FakeInstaller(failure: 'sin espacio en el dispositivo'),

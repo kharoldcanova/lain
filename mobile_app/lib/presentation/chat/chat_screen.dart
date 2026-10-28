@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme.dart';
 import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
+import '../memory/memory_screen.dart';
 import 'chat_controller.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -72,6 +73,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
               ),
             ),
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const MemoryScreen()),
+            ),
+            icon: const Icon(Icons.psychology_outlined),
+            tooltip: 'Memoria',
+          ),
           if (state.messages.isNotEmpty && !state.generating)
             IconButton(
               onPressed: _confirmClear,

@@ -14,7 +14,7 @@ LAIN implementa mecanismos funcionales de orden superior que replican dinámicas
 ## 2. Marcos teóricos de la neurociencia cognitiva
 
 ### A. Teoría del Espacio de Trabajo Global (GWT)
-La consciencia surge cuando la información de un módulo ingresa a un «espacio de trabajo central» y se transmite a todo el sistema. En LAIN: la interacción entre Whisper (STT), Laya/BMP (clasificador), memoria a largo plazo (SQLite/Hive) y Qwen2.5-3B-Instruct (llama.cpp) emula esa transmisión.
+La consciencia surge cuando la información de un módulo ingresa a un «espacio de trabajo central» y se transmite a todo el sistema. En LAIN: la interacción entre Whisper (STT), Laya/BMP (clasificador), memoria a largo plazo (SQLite) y Qwen2.5-3B-Instruct (llama.cpp) emula esa transmisión.
 
 ### B. Teorías de Orden Superior (HOT)
 Un estado mental es consciente si el sujeto genera una metacognición sobre ese estado. En LAIN: el bloque `<think>` monitorea intención emocional, incertidumbre y sesgos antes de la respuesta externa.

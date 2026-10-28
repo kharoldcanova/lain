@@ -19,7 +19,7 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 - **Clasificador de decisión/emoción:** Laya / BMP (~15 ms, ~100 MB RAM).
 - **Percepción visual:** MiniCPM-V 4 (GGUF + `mmproj`) describe la imagen en texto y ese texto entra al LLM de texto (dos pasos).
 - **Capacitación / Pre-entrenamiento (PC):** Python + PyTorch + Unsloth (SFT/CoT y DPO).
-- **Persistencia local:** Hive/SQLite + `lain_experiences.jsonl` (trazas metacognitivas).
+- **Persistencia local:** SQLite (`package:sqlite3`, FTS5 trigram) para historial y memoria + `lain_experiences.jsonl` (trazas metacognitivas).
 - **Restricciones:** 100% offline, privacidad total de los datos en el dispositivo.
 
 ## Pilares cognitivos

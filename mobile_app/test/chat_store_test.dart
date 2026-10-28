@@ -2,30 +2,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lain_mobile/data/storage/chat_store.dart';
 import 'package:lain_mobile/data/storage/lain_database.dart';
 import 'package:lain_mobile/domain/chat/chat_message.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 void main() {
   late Database db;
   late SqliteChatStore store;
 
-  setUpAll(() {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  });
-
-  setUp(() async {
-    db = await databaseFactory.openDatabase(
-      inMemoryDatabasePath,
-      options: OpenDatabaseOptions(
-        version: LainDatabase.version,
-        onCreate: LainDatabase.createSchema,
-      ),
-    );
+  setUp(() {
+    db = sqlite3.openInMemory();
+    LainDatabase.migrate(db);
     store = SqliteChatStore(db);
   });
 
-  tearDown(() async {
-    await db.close();
+  tearDown(() {
+    db.close();
   });
 
   ChatMessage msg(
@@ -36,9 +26,9 @@ void main() {
   }) =>
       ChatMessage(role: role, text: text, thought: thought, createdAt: at);
 
-  test('guarda un turno y lo devuelve en orden cronológico', () async {
+  test('guarda un turno y lo devuelve en orden cronológico', () {
     final base = DateTime.fromMillisecondsSinceEpoch(1700000000000);
-    await store.saveTurn(
+    store.saveTurn(
       user: msg(ChatRole.user, 'Hola', at: base),
       lain: msg(
         ChatRole.lain,
@@ -48,7 +38,7 @@ void main() {
       ),
     );
 
-    final history = await store.loadRecent();
+    final history = store.loadRecent();
 
     expect(history, hasLength(2));
     expect(history.first.isUser, isTrue);
@@ -58,10 +48,10 @@ void main() {
     expect(history.last.thought, '{"tono":"calido"}');
   });
 
-  test('devuelve solo los mensajes más recientes cuando se limita', () async {
+  test('devuelve solo los mensajes más recientes cuando se limita', () {
     final base = DateTime.fromMillisecondsSinceEpoch(1700000000000);
     for (var i = 0; i < 5; i++) {
-      await store.saveTurn(
+      store.saveTurn(
         user: msg(ChatRole.user, 'u$i', at: base.add(Duration(minutes: i))),
         lain: msg(
           ChatRole.lain,
@@ -71,34 +61,34 @@ void main() {
       );
     }
 
-    final history = await store.loadRecent(limit: 4);
+    final history = store.loadRecent(limit: 4);
 
-    expect(history.map((m) => m.text).toList(), <String>['u3', 'l3', 'u4', 'l4']);
-    expect(history, hasLength(4));
-    expect(history.first.text, 'u3');
-    expect(history.last.text, 'l4');
+    expect(
+      history.map((m) => m.text).toList(),
+      <String>['u3', 'l3', 'u4', 'l4'],
+    );
   });
 
-  test('clear borra todo el historial', () async {
+  test('clear borra todo el historial', () {
     final now = DateTime.now();
-    await store.saveTurn(
+    store.saveTurn(
       user: msg(ChatRole.user, 'Hola', at: now),
       lain: msg(ChatRole.lain, 'Hola.', at: now),
     );
 
-    await store.clear();
+    store.clear();
 
-    expect(await store.loadRecent(), isEmpty);
+    expect(store.loadRecent(), isEmpty);
   });
 
-  test('thought nulo se conserva como nulo', () async {
+  test('thought nulo se conserva como nulo', () {
     final now = DateTime.now();
-    await store.saveTurn(
+    store.saveTurn(
       user: msg(ChatRole.user, 'Hola', at: now),
       lain: msg(ChatRole.lain, 'Sin razonamiento', at: now),
     );
 
-    final history = await store.loadRecent();
+    final history = store.loadRecent();
 
     expect(history.last.thought, isNull);
     expect(history.last.hasThought, isFalse);

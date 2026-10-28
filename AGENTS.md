@@ -10,7 +10,7 @@ LAIN: asistente local con voz y personalidad en dispositivo (Edge AI). 100% offl
 - Clasificador de decisión/emoción: Laya / BMP (~15 ms, ~100 MB RAM).
 - STT: whisper.cpp. TTS: Kokoro/Piper o TTS nativo.
 - Fine-tuning (PC): Python + PyTorch + Unsloth en `python_ai/` (SFT/CoT + DPO).
-- Persistencia local: Hive/SQLite + `lain_experiences.jsonl` (trazas metacognitivas).
+- Persistencia local: SQLite (`package:sqlite3`, FTS5 trigram) + `lain_experiences.jsonl` (trazas metacognitivas).
 - Estado: BLoC o Riverpod.
 
 ## Estado actual

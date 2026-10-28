@@ -10,9 +10,11 @@ import '../../data/llm/model_installer.dart';
 import '../../data/llm/model_store.dart';
 import '../../data/storage/chat_store.dart';
 import '../../data/storage/lain_database.dart';
+import '../../data/storage/memory_store.dart';
 import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
 import '../../domain/chat/think_parser.dart';
+import '../../domain/memory/belief_capture.dart';
 
 final lainEngineProvider = Provider<LainEngine>((ref) {
   final engine = NativeLainEngine();
@@ -40,6 +42,12 @@ final chatStoreProvider = FutureProvider<ChatStore>((ref) async {
   return SqliteChatStore(db);
 });
 
+/// Memoria persistente (observaciones, creencias y prompts).
+final memoryStoreProvider = FutureProvider<MemoryStore>((ref) async {
+  final db = await LainDatabase.open();
+  return MemoryStore(db);
+});
+
 
 final systemPromptProvider = FutureProvider<String>((ref) async {
   return rootBundle.loadString('assets/system_prompt.txt');
@@ -51,6 +59,7 @@ final chatControllerProvider = NotifierProvider<ChatController, ChatState>(
 
 class ChatController extends Notifier<ChatState> {
   ChatStore? _store;
+  MemoryStore? _memory;
 
   @override
   ChatState build() {
@@ -108,12 +117,49 @@ class ChatController extends Notifier<ChatState> {
     try {
       final store = await ref.read(chatStoreProvider.future);
       _store = store;
-      final history = await store.loadRecent();
+      final history = store.loadRecent();
       if (history.isNotEmpty) {
         state = state.copyWith(messages: history);
       }
     } on Object catch (error) {
       debugPrint('Sin persistencia del historial: $error');
+    }
+
+    try {
+      _memory = await ref.read(memoryStoreProvider.future);
+    } on Object catch (error) {
+      debugPrint('Sin memoria persistente: $error');
+    }
+  }
+
+  /// Bloque de memoria recuperada que se inyecta antes de generar.
+  String? _memoryContext(String query) {
+    final memory = _memory;
+    if (memory == null) return null;
+    final items = memory.context(query: query, limit: 6, charBudget: 1200);
+    if (items.isEmpty) return null;
+    final buffer = StringBuffer('[MEMORIA]\n');
+    for (final item in items) {
+      buffer.writeln('- (${item.type}) ${item.title}: ${item.content}');
+    }
+    buffer.write('[FIN MEMORIA]');
+    return buffer.toString();
+  }
+
+  void _captureBelief(String? thought) {
+    final memory = _memory;
+    if (memory == null) return;
+    final belief = beliefFromThought(thought);
+    if (belief == null) return;
+    try {
+      memory.save(
+        type: MemoryType.belief,
+        title: belief.title,
+        content: belief.content,
+        topicKey: belief.topicKey,
+      );
+    } on Object catch (error) {
+      debugPrint('No se pudo guardar la creencia: $error');
     }
   }
 
@@ -121,7 +167,7 @@ class ChatController extends Notifier<ChatState> {
   Future<void> clearHistory() async {
     state = state.copyWith(messages: const <ChatMessage>[]);
     try {
-      await _store?.clear();
+      _store?.clear();
     } on Object catch (error) {
       debugPrint('No se pudo borrar el historial: $error');
     }
@@ -142,11 +188,13 @@ class ChatController extends Notifier<ChatState> {
       clearError: true,
     );
 
+    _memory?.savePrompt(text);
     final parser = ThinkParser();
     try {
       final system = await ref.read(systemPromptProvider.future);
+      final memory = _memoryContext(text);
       final stream = ref.read(lainEngineProvider).generate(
-            systemPrompt: system,
+            systemPrompt: memory == null ? system : '$system\n\n$memory',
             userMessage: text,
           );
       await for (final piece in stream) {
@@ -154,6 +202,7 @@ class ChatController extends Notifier<ChatState> {
         _setLastLain(parser.visible.trim(), thought: parser.thought);
       }
       parser.close();
+      _captureBelief(parser.thought);
       final reply = parser.visible.trim();
       _setLastLain(
         reply.isEmpty ? 'No supe qué responder. Intenta reformular la pregunta.' : reply,
@@ -175,7 +224,7 @@ class ChatController extends Notifier<ChatState> {
     final lain = messages.last;
     if (!user.isUser || lain.isUser) return;
     try {
-      await store.saveTurn(user: user, lain: lain);
+      store.saveTurn(user: user, lain: lain);
     } on Object catch (error) {
       debugPrint('No se pudo guardar el turno: $error');
     }
