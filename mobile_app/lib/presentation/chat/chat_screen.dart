@@ -29,6 +29,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     controller.send(text);
   }
 
+  Future<void> _confirmClear() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Borrar la conversación?'),
+        content: const Text(
+          'Se elimina el historial guardado en este dispositivo. No se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Borrar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(chatControllerProvider.notifier).clearHistory();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(chatControllerProvider);
@@ -47,6 +71,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               ),
+            ),
+          if (state.messages.isNotEmpty && !state.generating)
+            IconButton(
+              onPressed: _confirmClear,
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Limpiar conversación',
             ),
         ],
         bottom: PreferredSize(

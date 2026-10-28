@@ -14,6 +14,9 @@
 - `mobile_app/lib/domain/chat/chat_state.dart`: `EngineStatus` (starting, loading, ready, missingModel, unsupported, error) y estado de generación.
 - `mobile_app/test/widget_test.dart`: pruebas con `FakeEngine` y overrides de Riverpod (estado vacío, respuesta del motor, aviso de modelo ausente, mensajes vacíos).
 - `mobile_app/lib/domain/chat/think_parser.dart`: parser incremental que separa el bloque `think` del texto visible tolerando fragmentos partidos, bloques consecutivos y bloques sin cerrar.
+- `mobile_app/lib/data/storage/lain_database.dart`: apertura de `lain.db` con esquema v1 (tabla `messages` + índice por `created_at`).
+- `mobile_app/lib/data/storage/chat_store.dart`: `ChatStore` y `SqliteChatStore` (`loadRecent`, `saveTurn` en transacción, `clear`).
+- `mobile_app/test/chat_store_test.dart`: 4 pruebas del store contra SQLite real (`sqflite_common_ffi`).
 - `mobile_app/test/think_parser_test.dart`: 6 pruebas del parser (bloque simple, fragmentado, falso positivo, múltiples bloques, sin cierre y sin bloque).
 
 ### Changed
@@ -22,6 +25,9 @@
 - `mobile_app/lib/domain/chat/chat_message.dart`: campo `thought` con el razonamiento sin tags.
 - `mobile_app/lib/presentation/chat/chat_controller.dart`: el stream pasa por `ThinkParser`; la burbuja recibe texto limpio y pensamiento por separado.
 - `mobile_app/lib/presentation/chat/chat_screen.dart`: el razonamiento se muestra en un panel colapsable («Razonamiento») dentro de la burbuja.
+- `mobile_app/lib/presentation/chat/chat_controller.dart`: `chatStoreProvider`, restauración del historial al abrir, guardado del turno al terminar y `clearHistory()`.
+- `mobile_app/lib/presentation/chat/chat_screen.dart`: acción «Limpiar conversación» con diálogo de confirmación.
+- `mobile_app/pubspec.yaml`: `sqflite`, `path` y `sqflite_common_ffi` (dev).
 - `mobile_app/android/app/build.gradle.kts`: `packaging { jniLibs { useLegacyPackaging = true } }` para extraer las `.so` al instalar (`dlopen` por nombre).
 - `mobile_app/pubspec.yaml`: dependencia `ffi`, `integration_test` en dev, assets del system prompt y SDK mínimo `>=3.1.0`.
 

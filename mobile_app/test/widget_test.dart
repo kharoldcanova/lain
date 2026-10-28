@@ -8,6 +8,8 @@ import 'package:lain_mobile/app.dart';
 import 'package:lain_mobile/data/llm/lain_engine.dart';
 import 'package:lain_mobile/data/llm/model_installer.dart';
 import 'package:lain_mobile/data/llm/model_store.dart';
+import 'package:lain_mobile/data/storage/chat_store.dart';
+import 'package:lain_mobile/domain/chat/chat_message.dart';
 import 'package:lain_mobile/domain/chat/chat_state.dart';
 import 'package:lain_mobile/presentation/chat/chat_controller.dart';
 
@@ -79,14 +81,45 @@ class FakeInstaller implements ModelInstaller {
   }
 }
 
+
+class FakeChatStore implements ChatStore {
+  FakeChatStore({List<ChatMessage>? initial})
+      : messages = List<ChatMessage>.of(initial ?? const <ChatMessage>[]);
+
+  final List<ChatMessage> messages;
+  int clears = 0;
+
+  @override
+  Future<List<ChatMessage>> loadRecent({int limit = 200}) async =>
+      List<ChatMessage>.of(messages);
+
+  @override
+  Future<void> saveTurn({
+    required ChatMessage user,
+    required ChatMessage lain,
+  }) async {
+    messages
+      ..add(user)
+      ..add(lain);
+  }
+
+  @override
+  Future<void> clear() async {
+    clears++;
+    messages.clear();
+  }
+}
+
 Widget _app({
   FakeEngine? engine,
   ModelLocation? location,
   ModelInstaller? installer,
+  FakeChatStore? store,
 }) {
   return ProviderScope(
     overrides: [
       lainEngineProvider.overrideWithValue(engine ?? FakeEngine()),
+      chatStoreProvider.overrideWith((ref) async => store ?? FakeChatStore()),
       localInferenceProvider.overrideWithValue(true),
       modelInstallerProvider.overrideWithValue(installer ?? FakeInstaller()),
       modelLocatorProvider.overrideWithValue(
@@ -149,6 +182,65 @@ void main() {
     expect(find.text('{"tono":"calido"}'), findsOneWidget);
   });
 
+  testWidgets('restaura el historial guardado al abrir', (tester) async {
+    final store = FakeChatStore(
+      initial: <ChatMessage>[
+        ChatMessage(
+          role: ChatRole.user,
+          text: 'Hola de ayer',
+          createdAt: DateTime(2026, 1, 1),
+        ),
+        ChatMessage(
+          role: ChatRole.lain,
+          text: 'Hola, soy LAIN.',
+          createdAt: DateTime(2026, 1, 1, 0, 0, 1),
+        ),
+      ],
+    );
+    await tester.pumpWidget(_app(store: store));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hola de ayer'), findsOneWidget);
+    expect(find.text('Hola, soy LAIN.'), findsOneWidget);
+  });
+
+  testWidgets('persiste cada turno en el store', (tester) async {
+    final store = FakeChatStore();
+    await tester.pumpWidget(_app(store: store));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Hola');
+    await tester.tap(find.byTooltip('Enviar'));
+    await tester.pumpAndSettle();
+
+    expect(store.messages, hasLength(2));
+    expect(store.messages.first.text, 'Hola');
+    expect(store.messages.last.text, 'Hola, soy LAIN.');
+  });
+
+  testWidgets('limpiar borra el historial tras confirmar', (tester) async {
+    final store = FakeChatStore(
+      initial: <ChatMessage>[
+        ChatMessage(
+          role: ChatRole.user,
+          text: 'Hola de ayer',
+          createdAt: DateTime(2026, 1, 1),
+        ),
+      ],
+    );
+    await tester.pumpWidget(_app(store: store));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Limpiar conversación'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Borrar'));
+    await tester.pumpAndSettle();
+
+    expect(store.clears, 1);
+    expect(find.text('Hola de ayer'), findsNothing);
+    expect(find.text('Estoy aquí.'), findsOneWidget);
+  });
+
   testWidgets('el controlador ignora mensajes vacíos', (tester) async {    await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
@@ -170,6 +262,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         lainEngineProvider.overrideWithValue(FakeEngine()),
+        chatStoreProvider.overrideWith((ref) async => FakeChatStore()),
         localInferenceProvider.overrideWithValue(true),
         modelInstallerProvider.overrideWithValue(FakeInstaller()),
         modelLocatorProvider.overrideWithValue(
@@ -196,6 +289,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         lainEngineProvider.overrideWithValue(FakeEngine()),
+        chatStoreProvider.overrideWith((ref) async => FakeChatStore()),
         localInferenceProvider.overrideWithValue(true),
         modelInstallerProvider.overrideWithValue(
           FakeInstaller(failure: 'sin espacio en el dispositivo'),

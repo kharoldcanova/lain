@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/llm/lain_engine.dart';
 import '../../data/llm/model_installer.dart';
 import '../../data/llm/model_store.dart';
+import '../../data/storage/chat_store.dart';
+import '../../data/storage/lain_database.dart';
 import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
 import '../../domain/chat/think_parser.dart';
@@ -31,6 +33,13 @@ final modelInstallerProvider = Provider<ModelInstaller>(
   (ref) => AssetModelInstaller(),
 );
 
+/// Persistencia del historial. Si la base de datos no abre, el chat sigue
+/// funcionando sin memoria (degradación explícita).
+final chatStoreProvider = FutureProvider<ChatStore>((ref) async {
+  final db = await LainDatabase.open();
+  return SqliteChatStore(db);
+});
+
 
 final systemPromptProvider = FutureProvider<String>((ref) async {
   return rootBundle.loadString('assets/system_prompt.txt');
@@ -41,6 +50,8 @@ final chatControllerProvider = NotifierProvider<ChatController, ChatState>(
 );
 
 class ChatController extends Notifier<ChatState> {
+  ChatStore? _store;
+
   @override
   ChatState build() {
     Future<void>.microtask(_init);
@@ -48,6 +59,8 @@ class ChatController extends Notifier<ChatState> {
   }
 
   Future<void> _init() async {
+    await _restoreHistory();
+
     if (!ref.read(localInferenceProvider)) {
       state = state.copyWith(status: EngineStatus.unsupported);
       return;
@@ -91,6 +104,29 @@ class ChatController extends Notifier<ChatState> {
     }
   }
 
+  Future<void> _restoreHistory() async {
+    try {
+      final store = await ref.read(chatStoreProvider.future);
+      _store = store;
+      final history = await store.loadRecent();
+      if (history.isNotEmpty) {
+        state = state.copyWith(messages: history);
+      }
+    } on Object catch (error) {
+      debugPrint('Sin persistencia del historial: $error');
+    }
+  }
+
+  /// Borra el historial persistido y el de pantalla.
+  Future<void> clearHistory() async {
+    state = state.copyWith(messages: const <ChatMessage>[]);
+    try {
+      await _store?.clear();
+    } on Object catch (error) {
+      debugPrint('No se pudo borrar el historial: $error');
+    }
+  }
+
   Future<void> send(String rawText) async {
     final text = rawText.trim();
     if (text.isEmpty || !state.canSend) return;
@@ -126,7 +162,22 @@ class ChatController extends Notifier<ChatState> {
     } on Object catch (error) {
       _setLastLain('No pude responder: $error');
     } finally {
+      await _persistTurn();
       state = state.copyWith(generating: false);
+    }
+  }
+
+  Future<void> _persistTurn() async {
+    final store = _store;
+    final messages = state.messages;
+    if (store == null || messages.length < 2) return;
+    final user = messages[messages.length - 2];
+    final lain = messages.last;
+    if (!user.isUser || lain.isUser) return;
+    try {
+      await store.saveTurn(user: user, lain: lain);
+    } on Object catch (error) {
+      debugPrint('No se pudo guardar el turno: $error');
     }
   }
 

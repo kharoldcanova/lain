@@ -42,6 +42,8 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - `assets/models/Qwen2.5-3B-Instruct.Q4_K_M.gguf` incluido en el APK (`androidResources { noCompress += "gguf" }`). `AssetModelInstaller` copia el asset vía `MethodChannel` + `AssetManager` en streaming con barra de progreso (`EngineStatus.preparingModel`). Verificado: APK release 1.96 GB, compilado y empaquetado correctamente.
 - [x] T1.7 Procesar/ocultar el bloque `think` en la UI antes de mostrarlo.
   - `lib/domain/chat/think_parser.dart` separa el bloque del texto visible con tolerancia a fragmentos partidos, bloques consecutivos y bloques sin cerrar; `ChatMessage.thought` lo guarda y la burbuja lo muestra en un panel colapsable «Razonamiento». `flutter analyze` limpio y 12 pruebas en verde (6 del parser).
+- [x] T1.9 Persistir el historial del chat en SQLite (`sqflite`).
+  - `lib/data/storage/lain_database.dart` (esquema v1, tabla `messages` con `role`, `text`, `thought`, `created_at`) y `lib/data/storage/chat_store.dart` (`loadRecent`, `saveTurn` transaccional, `clear`). El controlador restaura el historial al abrir, guarda cada turno y permite borrarlo con confirmación. Degradación explícita: si la base no abre, el chat funciona sin memoria. 4 pruebas del store con SQLite real (`sqflite_common_ffi`) y 19 en total.
 - [ ] T1.8 Medir latencia en hardware arm64 real (emulador x86_64 es referencia pesimista).
 
 ### Funcionalidad 2: Reconocimiento de voz a texto (STT)
