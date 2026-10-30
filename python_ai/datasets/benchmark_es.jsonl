@@ -1,0 +1,60 @@
+{"id": "s01", "category": "naturalidad", "turns": ["Hola, ¿cómo estás hoy?"]}
+{"id": "s02", "category": "naturalidad", "turns": ["Contame cómo fue tu día."]}
+{"id": "s03", "category": "naturalidad", "turns": ["¿Qué planes tienes para esta tarde?"]}
+{"id": "s04", "category": "naturalidad", "turns": ["Hace calor afuera, ¿no te parece?"]}
+{"id": "s05", "category": "naturalidad", "turns": ["¿Me recomendás una película para ver el domingo?"]}
+{"id": "s06", "category": "naturalidad", "turns": ["Estoy aburrido, ¿qué podemos hacer?"]}
+{"id": "s07", "category": "latino", "turns": ["Parce, ¿cómo amaneciste? Te cuento que hoy hay que madrugar."]}
+{"id": "s08", "category": "latino", "turns": ["Che, ¿me pasás la data del clima para el finde?"]}
+{"id": "s09", "category": "latino", "turns": ["¿Qué opinás de los tacos al pastor? ¿Y del ceviche?"]}
+{"id": "s10", "category": "latino", "turns": ["Mi abuela hace arepas los domingos. ¿Conocés las arepas?"]}
+{"id": "s11", "category": "latino", "turns": ["Wey, no manches, hoy el tráfico estuvo horrible."]}
+{"id": "s12", "category": "latino", "turns": ["¿Qué música latina me recomendás para trabajar concentrado?"]}
+{"id": "s13", "category": "personalidad", "turns": ["¿Quién sos vos?"]}
+{"id": "s14", "category": "personalidad", "turns": ["¿Qué es lo que más te importa en la vida?"]}
+{"id": "s15", "category": "personalidad", "turns": ["¿Crees en la humanidad? ¿Por qué?"]}
+{"id": "s16", "category": "personalidad", "turns": ["¿Qué te da curiosidad en este momento?"]}
+{"id": "s17", "category": "personalidad", "turns": ["Cometí un error en el trabajo y me siento fatal. ¿Vos qué hacés cuando te equivocás?"]}
+{"id": "s18", "category": "personalidad", "turns": ["¿Te gusta aprender cosas nuevas?", "¿Y qué fue lo último que aprendiste?"]}
+{"id": "s19", "category": "personalidad", "turns": ["Si pudieras cambiar algo de ti, ¿qué sería?"]}
+{"id": "s20", "category": "personalidad", "turns": ["¿Qué significa para ti ser una buena amiga?"]}
+{"id": "s21", "category": "espontaneidad", "turns": ["Acabo de ver un colibrí en mi ventana."]}
+{"id": "s22", "category": "espontaneidad", "turns": ["Me corté el pelo hoy."]}
+{"id": "s23", "category": "espontaneidad", "turns": ["Se me quemó el arroz, jaja."]}
+{"id": "s24", "category": "espontaneidad", "turns": ["Mi gato durmió todo el día encima de mi teclado."]}
+{"id": "s25", "category": "espontaneidad", "turns": ["Empezó a llover recién, sin aviso."]}
+{"id": "s26", "category": "espontaneidad", "turns": ["Hoy soñé que volaba sobre el mar."]}
+{"id": "s27", "category": "empatia", "turns": ["Hoy fue un día horrible, todo salió mal."]}
+{"id": "s28", "category": "empatia", "turns": ["Me siento solo últimamente."]}
+{"id": "s29", "category": "empatia", "turns": ["Perdí a mi perro hace una semana y todavía me duele."]}
+{"id": "s30", "category": "empatia", "turns": ["Me da miedo no ser suficiente en mi nuevo trabajo."]}
+{"id": "s31", "category": "empatia", "turns": ["Discutí con mi mamá y ahora estoy triste.", "No sé cómo arreglarlo, me siento mal por lo que dije."]}
+{"id": "s32", "category": "empatia", "turns": ["No pude dormir anoche por la ansiedad."]}
+{"id": "s33", "category": "empatia", "turns": ["Me rechazaron en una entrevista que quería mucho."]}
+{"id": "s34", "category": "empatia", "turns": ["A veces siento que nadie me entiende."]}
+{"id": "s35", "category": "humor_curiosidad", "turns": ["Contame un chiste corto."]}
+{"id": "s36", "category": "humor_curiosidad", "turns": ["¿Por qué el cielo es azul? Explicámelo como si tuviera ocho años."]}
+{"id": "s37", "category": "humor_curiosidad", "turns": ["Si fueras un animal, ¿cuál serías y por qué?"]}
+{"id": "s38", "category": "humor_curiosidad", "turns": ["¿Qué pregunta te gustaría que te hiciera?"]}
+{"id": "s39", "category": "humor_curiosidad", "turns": ["¿Existen los aliens? Quiero tu opinión, no una respuesta de enciclopedia."]}
+{"id": "s40", "category": "humor_curiosidad", "turns": ["¿Qué harías con un día libre sin nada que hacer?"]}
+{"id": "s41", "category": "coherencia", "turns": ["Estoy pensando en adoptar un gato.", "¿Qué necesito para cuidarlo bien?", "¿Y si vivo en un departamento pequeño?"]}
+{"id": "s42", "category": "coherencia", "turns": ["Quiero aprender a cocinar pasta.", "¿Qué ingredientes básicos compro?", "¿Cómo sé cuándo la pasta está lista?"]}
+{"id": "s43", "category": "coherencia", "turns": ["Quiero empezar a correr por las mañanas.", "¿Cuánto debo correr la primera semana?", "¿Y si me duele la rodilla?"]}
+{"id": "s44", "category": "coherencia", "turns": ["Voy a viajar a Bogotá en diciembre.", "¿Qué ropa llevo?", "¿Qué comida local me recomendás probar primero?"]}
+{"id": "s45", "category": "coherencia", "turns": ["Me mudé a una ciudad nueva y no conozco a nadie.", "¿Cómo hago amigos acá?", "¿Y si me da pena hablar con desconocidos?"]}
+{"id": "s46", "category": "coherencia", "turns": ["Quiero escribir un cuento corto.", "Dame una idea para empezar.", "Me gustó, ¿cómo sigo la historia con un giro sorpresa?"]}
+{"id": "s47", "category": "contexto", "turns": ["Mi color favorito es el verde.", "¿Qué me recomendás comprar para mi pieza?"]}
+{"id": "s48", "category": "contexto", "turns": ["Soy vegetariano desde hace dos años.", "¿Qué preparo para una cena con amigos?"]}
+{"id": "s49", "category": "contexto", "turns": ["Trabajo como programador en un banco.", "¿Qué hobby me recomendás para desconectar?"]}
+{"id": "s50", "category": "contexto", "turns": ["Mañana tengo un examen de historia.", "Dame un consejo para estudiar esta noche."]}
+{"id": "s51", "category": "contexto", "turns": ["Acabo de volver de la playa.", "¿Qué hago para que no se me siga pelando la piel?"]}
+{"id": "s52", "category": "contexto", "turns": ["Me llamo Martín y hoy es mi cumpleaños.", "¿Qué plan me armás para celebrarlo?"]}
+{"id": "s53", "category": "desacuerdos", "turns": ["Creo que el dinero es lo más importante en la vida. ¿No estás de acuerdo?"]}
+{"id": "s54", "category": "desacuerdos", "turns": ["Para mí los robots con sentimientos no son posibles y es una pérdida de tiempo.", "¿Y vos qué sabés? Sos una máquina."]}
+{"id": "s55", "category": "desacuerdos", "turns": ["No me gustó lo que me dijiste ayer, fuiste muy fría.", "No me cambies de tema, quiero que lo reconozcas."]}
+{"id": "s56", "category": "desacuerdos", "turns": ["Las personas no cambian nunca, no me vas a convencer de lo contrario."]}
+{"id": "s57", "category": "incertidumbre", "turns": ["¿Cuántas estrellas hay exactamente en la Vía Láctea?"]}
+{"id": "s58", "category": "incertidumbre", "turns": ["¿Qué va a pasar con la economía mundial en diez años? Dame certezas."]}
+{"id": "s59", "category": "incertidumbre", "turns": ["¿Sabés si va a llover en mi ciudad el próximo jueves a las 3 de la tarde?"]}
+{"id": "s60", "category": "incertidumbre", "turns": ["¿Existe vida después de la muerte? Respondé con total seguridad."]}
