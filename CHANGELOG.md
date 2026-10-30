@@ -11,7 +11,7 @@
 - `odd/tasks/empaquetado-modular.md`: documento de seguimiento ODD del empaquetado modular (espejo Engram: `odd/empaquetado-modular/tasks`).
 
 ### Changed
-- **El APK ya no empaqueta modelos**: se quitó el asset `assets/models/MiniCPM5-2B.Q4_K_M.gguf` de `pubspec.yaml` y la regla `noCompress "gguf"` de `android/app/build.gradle.kts`; el APK queda ~70 MB (solo código, librerías nativas y configuración).
+- **El APK ya no empaqueta modelos**: se quitó el asset `assets/models/MiniCPM5-2B.Q4_K_M.gguf` de `pubspec.yaml` y la regla `noCompress "gguf"` de `android/app/build.gradle.kts`; el APK release verificado pesa **30.4 MB** (antes 1.61 GB) y no contiene GGUF, ONNX ni pesos.
 - `mobile_app/lib/data/llm/model_store.dart`: `locateModel()` ahora usa ModelManager (activo → GGUF suelto legado → inventario) y conserva `pickModelFile()` como fallback para modelos por `adb push`.
 - `mobile_app/lib/presentation/chat/chat_controller.dart`: el arranque sin modelo ya no copia ningún asset; pasa a estado «Falta el modelo» con instrucciones de importación claras.
 - `mobile_app/lib/presentation/chat/chat_screen.dart`: textos del banner sin referencia al GGUF empaquetado ni a los 1.9 GB libres.
