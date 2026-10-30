@@ -3,6 +3,22 @@
 ## [Unreleased]
 
 ### Added
+- `mobile_app/lib/data/llm/model_metadata.dart`: `ModelMetadata` (id, nombre, versión, arquitectura, formato, cuantización, familia, tamaño, SHA-256, motor compatible) con `model.json` por modelo y `quantizationFromName`/`sanitizeId`.
+- `mobile_app/lib/data/llm/model_manager.dart`: `ModelManager` agnóstico al modelo — inventario (`models/<id>/model.json`), importación desde archivo local con SHA-256 calculado en el mismo pase, verificación de espacio libre, copia temporal + renombrado atómico, detección de instalaciones incompletas y manifiestos corruptos, modelo activo (`active.json`) y eliminación que solo toca `models/<id>/` (jamás `lain.db`).
+- `mobile_app/test/model_manager_test.dart`: 13 pruebas del gestor (importación válida, hash incorrecto sin residuos, id duplicado, extensión inválida, archivo vacío, espacio insuficiente, instalaciones incompletas, GGUF legados, eliminación aislada, modelo activo persistente).
+- `python_ai/scripts/benchmark_conversacional.py`: harness de benchmark sobre `llama-server` (API OpenAI-compatible, stdlib puro) con TTFT, tokens/s, RAM del servidor y temperatura por turno; fallback de payload por compatibilidad (`chat_template_kwargs`, `stream_options`).
+- `python_ai/datasets/benchmark_es.jsonl`: 60 escenarios conversacionales en español (naturalidad, español latinoamericano, personalidad, espontaneidad, empatía, humor/curiosidad, coherencia multi-turno, continuidad contextual, desacuerdos, incertidumbre).
+- `odd/tasks/empaquetado-modular.md`: documento de seguimiento ODD del empaquetado modular (espejo Engram: `odd/empaquetado-modular/tasks`).
+
+### Changed
+- **El APK ya no empaqueta modelos**: se quitó el asset `assets/models/MiniCPM5-2B.Q4_K_M.gguf` de `pubspec.yaml` y la regla `noCompress "gguf"` de `android/app/build.gradle.kts`; el APK queda ~70 MB (solo código, librerías nativas y configuración).
+- `mobile_app/lib/data/llm/model_store.dart`: `locateModel()` ahora usa ModelManager (activo → GGUF suelto legado → inventario) y conserva `pickModelFile()` como fallback para modelos por `adb push`.
+- `mobile_app/lib/presentation/chat/chat_controller.dart`: el arranque sin modelo ya no copia ningún asset; pasa a estado «Falta el modelo» con instrucciones de importación claras.
+- `mobile_app/lib/presentation/chat/chat_screen.dart`: textos del banner sin referencia al GGUF empaquetado ni a los 1.9 GB libres.
+- `mobile_app/lib/data/llm/model_installer.dart`: se eliminan `modelAssetPath`/`modelFileName` (el asset ya no existe); el canal nativo y `freeBytes` se conservan para la importación con selector de archivos.
+- `mobile_app/test/widget_test.dart`: las pruebas del arranque ahora cubren «sin modelo: no copia nada y pide importarlo» y «la carga fallida muestra error del motor».
+
+### Fixed
 - `mobile_app/lib/data/llm/model_store.dart`: `pickModelFile()` elige el `.gguf` modificado más recientemente en `files/models/`, así se cambia de modelo con `adb push` sin recompilar el APK (A/B MiniCPM ↔ Qwen) y `ModelLocation.fileName` informa el archivo en uso.
 - `mobile_app/test/model_store_test.dart`: 3 pruebas de la selección (sin GGUF, el más reciente gana, se ignoran archivos que no son `.gguf`).
 - `mobile_app/assets/models/MiniCPM5-2B.Q4_K_M.gguf`: el APK empaqueta MiniCPM5-2B Q4_K_M (1.45 GiB) en lugar de Qwen2.5-3B (1.8 GiB) para medir latencia en el teléfono (T15.6).

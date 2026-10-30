@@ -1,10 +1,10 @@
 # STATE.md
 
 ## Tarea en curso
-Prueba de **MiniCPM5-2B Q4_K_M** como modelo local del teléfono (1.45 GiB frente a 1.8 GiB del Qwen2.5-3B), para ver si un 2B desatasca la latencia (T15.6). La app ya lo empaqueta, lo carga y responde con bloque `<think>` JSON válido en el emulador x86_64. Se añadió selección de modelo por carpeta (`files/models/`): gana el `.gguf` modificado más recientemente, así se compara MiniCPM contra Qwen con `adb push` sin recompilar el APK. Falta la medición en un teléfono arm64 real: el usuario la hará con el APK ya compilado.
+Fase B del empaquetado modular: **el APK ya no contiene modelos** (commit `8034c39`). El móvil sigue usando MiniCPM5-2B mientras el benchmark comparativo (Fase A) corre en el PC para elegir su sustituto (Qwen3-1.7B, Qwen3-0.6B, Llama 3.2 1B). Pendiente de Fase B: importación desde el sistema de archivos (SAF), pantalla de gestión de modelos (Fase 6) y verificación del APK release (sin GGUF, tamaño, persistencia al actualizar).
 
 ## Objetivo actual
-Medir MiniCPM5-2B en un teléfono arm64 (TTFT y total por turno desde `lain_startup.log`, T1.8/T15.6) y compararlo contra Qwen2.5-3B con los mismos prompts. Después: recortar el prompt de sistema y el bloque `[MEMORIA]`, dar contexto multi-turno al puente C y seguir con STT (Fase 2).
+Cerrar Fase B (externalización + ModelManager con importación local y UI de gestión) y presentar los resultados del benchmark conversacional (60 escenarios en español) con la recomendación del modelo sustituto para revisión antes de integrarlo (Fase C).
 
 
 ## Objetivo anterior
@@ -14,7 +14,6 @@ Validar Qwen2.5-3B-Instruct como base de LAIN (español correcto + bloque `<thin
 LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia funcional (no fenomenológica): GWT, HOT (`<think>`), RPT, percepción visual en dos pasos (MiniCPM-V 4 describe, Qwen razona) y ajuste bayesiano de creencias sobre un núcleo axiomático invariante.
 
 ## Zonas frágiles
-- La copia del GGUF desde los assets usa la ruta física del APK: `flutter_assets/assets/models/...`. `rootBundle` usa la ruta lógica `assets/...`, pero `AssetManager` no: con la ruta lógica la copia falla con «Error del motor».
 - Las `.so` de llama.cpp no se versionan (`jniLibs/` está ignorado): hay que ejecutar `mobile_app/tools/build_llama_android.sh` antes de compilar el APK.
 - El puente debe llamarse `liblain_llm.so` (prefijo `lib`): `dlopen` resuelve por nombre y sin el prefijo falla aunque el archivo exista.
 - El APK necesita `useLegacyPackaging = true`; con `extractNativeLibs=false` las `.so` quedan dentro del APK y `dlopen("liblain_llm.so")` devuelve «library not found».
@@ -29,7 +28,7 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - Entorno Python: requiere Python 3.12 (Unsloth no soporta 3.13+); `torch`/`torchvision` deben ser de la misma build CUDA (cu126).
 - Latencia inaceptable en móvil: Qwen2.5-3B Q4_K_M en CPU responde con una demora muy alta para conversación (reportado al probar el APK arm64). El prompt de sistema (~1.5k tokens) más el bloque `[MEMORIA]` agravan el TTFT; es el argumento principal de T15 (modelo pequeño o propio).
 - `--split-per-abi` **no** se puede usar con `abiFilters` en `defaultConfig`: AGP aborta con «Conflicting configuration: 'arm64-v8a,x86_64' in ndk abiFilters cannot be present when splits abi filters are set». El build documentado es universal: `flutter build apk --release` (el `abiFilters` ya limita a arm64-v8a y x86_64). Tampoco usar `--target-platform android-arm64` con `jniLibs` de dos ABIs: ese APK crashea en x86_64 (`libflutter.so is for EM_AARCH64`).
-- Qué modelo carga la app: el `.gguf` modificado más recientemente en `files/models/`. Un `adb push` marca la hora actual y ese gana al siguiente arranque; con la carpeta vacía se copia el asset empaquetado. El arranque escribe `init: modelo=<nombre>` en `lain_startup.log`.
+- Qué modelo carga la app: el activo registrado en `models/active.json` (ModelManager); si no hay, el `.gguf` suelto más reciente en `files/models/` (modelos por `adb push`). El arranque escribe `init: modelo=<nombre>` en `lain_startup.log`. Sin modelo, la app arranca igual y pide importar uno (estado «Falta el modelo»).
 - El emulador `lain` del AVD tiene 8 GB de `/data`: no alcanza para el APK (~1.6 GB) más la copia del GGUF (~1.5 GB). Para pruebas en emulador hace falta un AVD con `disk.dataPartition.size=16G` (se creó `lain16` en `~/.android/avd/`).
 - SQLite propio: `package:sqlite3` empaqueta SQLite con FTS5 (no el del sistema); el tokenizer `trigram` exige SQLite ≥ 3.34, por eso no se usa `sqflite`.
 - La memoria se guarda en `getApplicationSupportDirectory()/lain.db`; el historial del chat anterior (vía `sqflite`) no se migra.
@@ -65,8 +64,12 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - App móvil con MiniCPM5-2B: asset empaquetado y copiado al primer arranque, carga y generación reales verificadas en emulador x86_64 (respuesta `<think>` JSON válido + texto visible). `locateModel()` elige el GGUF más reciente de `files/models/` y `modelFileName` pasó a `MiniCPM5-2B.Q4_K_M.gguf`; APK release universal de 1.59 GB. `flutter analyze` limpio y 48 pruebas en verde.
 - APK de release documentado como universal: el `--split-per-abi` del README chocaba con el `abiFilters` añadido el 2026-10-28.
 - Calidad del español mejoró frente a MiniCPM5-2B (frases completas, respuestas coherentes), pero siguen errores («Soyo soy es un modelo…», «los grupos más avances», corrección ortográfica equivocada en «Haber si mañana…») y una respuesta que valida el pensamiento negativo («No sirves para nada») en vez de acompañarlo → dataset a revisar en T11.7.
+- Decisión de producto: sustituir MiniCPM5-2B como modelo conversacional principal (español deficiente); Qwen2.5-3B queda en PC (latencia inaceptable en móvil). Evaluación comparativa autorizada de Qwen3-1.7B, Qwen3-0.6B y Llama 3.2 1B Instruct (benchmark de 60 escenarios en español en curso en el PC).
+- Fase B externalización (commit `8034c39`): el APK ya no empaqueta GGUF (asset quitado de `pubspec.yaml`, `noCompress` eliminado de gradle); arranque sin modelo con instrucciones claras; `ModelManager` (`lib/data/llm/model_manager.dart` + `model_metadata.dart`) con inventario `models/<id>/model.json`, importación con SHA-256 en un solo pase, verificación de espacio, copia temporal + renombrado atómico, detección de instalaciones incompletas, modelo activo (`active.json`) y eliminación que solo toca la carpeta del modelo; `locateModel()` conserva el fallback de GGUF sueltos (`adb push`). 65 pruebas en verde y `flutter analyze` limpio.
 
 ## Próximos pasos
+- Fase B (resto): importación de modelos desde el selector de archivos (SAF vía MethodChannel, reutilizando la copia con `.part` + renombrado), pantalla de gestión de modelos (Fase 6: inventario, importar, eliminar con confirmación, modelo activo), verificación del APK release (sin GGUF/ONNX, tamaño, persistencia del modelo y memoria al actualizar, offline).
+- Fase A: revisar los resultados del benchmark (60 escenarios, 3 modelos) y presentar la recomendación del sustituto antes de integrarlo (Fase C, requiere revisión del usuario).
 - Medir MiniCPM5-2B en el teléfono (T15.6/T1.8): instalar `mobile_app/build/app/outputs/flutter-apk/app-release.apk`, enviar 3 turnos y leer `ttft`/`total` en `lain_startup.log`; después `adb push` del Qwen y repetir para comparar.
 - T11.7: revisar el dataset (respuestas que validan pensamientos negativos, concordancia y ortografía) y medir de nuevo con `test/check_format.py` + `test/eval_es.py` tras corregirlo.
 - T9: portar la visión en dos pasos a la app (cámara, liberar VLM antes del LLM).
