@@ -1,7 +1,7 @@
 # STATE.md
 
 ## Tarea en curso
-MVP funcional de LAIN en Android: el APK ya no lleva modelos (30.4 MB), ModelManager + pantalla «Modelos» (importar SAF, activar, eliminar) completados, prompt de identidad separado del modelo. Falta la validación en el teléfono: instalar el APK, importar Qwen3-1.7B (o `adb push`), conversar en español, verificar historial y offline.
+MVP funcional de LAIN en Android: APK release compilado y verificado (30.8 MB, sin modelos, con pantalla «Modelos» e importación SAF). **Pendiente: validación del usuario en el Samsung Galaxy A14** (instalar, importar Qwen3-1.7B, conversar, historial y offline). No se declara validado en Android físico hasta que el usuario realice las pruebas.
 
 ## Objetivo actual
 Validar el MVP en un dispositivo Android real con Qwen3-1.7B y el prompt de identidad (sin JSON de metacognición), y presentar el contrato de salida propuesto (Fase C.1) para su revisión antes del SFT de LAIN-ES MVP.
