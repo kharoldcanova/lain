@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 ### Added
+- `mobile_app/lib/presentation/models/model_screen.dart`: pantalla «Modelos» — inventario con tamaño/cuantización/familia, modelo activo, activación (recarga el motor liberando el GGUF anterior), eliminación con confirmación, modelos sueltos (`adb push`) e instalaciones incompletas; importación con diálogo de progreso.
+- `mobile_app/test/model_screen_test.dart`: 5 pruebas de la pantalla (inventario, activar, eliminar aislado, importar, cancelar).
+- Importación SAF: `MainActivity.pickAndImport` (selector `ACTION_OPEN_DOCUMENT` + copia `.part` + renombrado a `files/imports/`) y `AssetModelInstaller.pickAndImport` en Dart.
 - `mobile_app/lib/data/llm/model_metadata.dart`: `ModelMetadata` (id, nombre, versión, arquitectura, formato, cuantización, familia, tamaño, SHA-256, motor compatible) con `model.json` por modelo y `quantizationFromName`/`sanitizeId`.
 - `mobile_app/lib/data/llm/model_manager.dart`: `ModelManager` agnóstico al modelo — inventario (`models/<id>/model.json`), importación desde archivo local con SHA-256 calculado en el mismo pase, verificación de espacio libre, copia temporal + renombrado atómico, detección de instalaciones incompletas y manifiestos corruptos, modelo activo (`active.json`) y eliminación que solo toca `models/<id>/` (jamás `lain.db`).
 - `mobile_app/test/model_manager_test.dart`: 13 pruebas del gestor (importación válida, hash incorrecto sin residuos, id duplicado, extensión inválida, archivo vacío, espacio insuficiente, instalaciones incompletas, GGUF legados, eliminación aislada, modelo activo persistente).
@@ -12,6 +15,8 @@
 
 ### Changed
 - **El APK ya no empaqueta modelos**: se quitó el asset `assets/models/MiniCPM5-2B.Q4_K_M.gguf` de `pubspec.yaml` y la regla `noCompress "gguf"` de `android/app/build.gradle.kts`; el APK release verificado pesa **30.4 MB** (antes 1.61 GB) y no contiene GGUF, ONNX ni pesos.
+- `mobile_app/assets/system_prompt.txt`: ahora solo la identidad de LAIN (personalidad separada del modelo); el bloque JSON de metacognición se retira hasta el SFT (Qwen3-1.7B base lo emitía sin etiquetas ni respuesta visible).
+- `mobile_app/lib/data/llm/lain_engine.dart`: al cargar un modelo nuevo se libera el residente antes (cambio de modelo sin OOM en móvil).
 - `mobile_app/lib/data/llm/model_store.dart`: `locateModel()` ahora usa ModelManager (activo → GGUF suelto legado → inventario) y conserva `pickModelFile()` como fallback para modelos por `adb push`.
 - `mobile_app/lib/presentation/chat/chat_controller.dart`: el arranque sin modelo ya no copia ningún asset; pasa a estado «Falta el modelo» con instrucciones de importación claras.
 - `mobile_app/lib/presentation/chat/chat_screen.dart`: textos del banner sin referencia al GGUF empaquetado ni a los 1.9 GB libres.

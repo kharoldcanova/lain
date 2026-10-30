@@ -61,7 +61,7 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 
 ### Funcionalidad 4: Gestión de modelos locales
 - [x] T4.1 Verificar disponibilidad de archivos `.gguf` (mmproj y `.bin` pendientes) en almacenamiento: `ModelManager.inventory()` + detección de instalaciones incompletas y manifiestos corruptos.
-- [ ] T4.2 Permitir importar modelos desde el sistema de archivos: `ModelManager.importModel()` (SHA-256, espacio, renombrado atómico) listo; falta el selector SAF y la UI (Fase 6).
+- [x] T4.2 Permitir importar modelos desde el sistema de archivos: `ModelManager.importModel()` (SHA-256, espacio, renombrado atómico) + selector SAF en `MainActivity` (`pickAndImport`) + pantalla «Modelos» con activación y eliminación con confirmación.
 - [x] T4.3 Manejar errores de modelo no encontrado / corrupto: estado «Falta el modelo» sin errores FFI crudos; hash incorrecto rechazado sin residuos; modelos incompletos nunca se cargan.
 - [ ] T4.4 Validar compatibilidad modelo base ↔ proyector `mmproj.gguf`.
 
