@@ -22,9 +22,14 @@ abstract interface class ModelInstaller {
   });
 
   /// Abre el selector de archivos de Android y copia el `.gguf` elegido a
-  /// [targetDir] con archivo temporal + renombrado. Devuelve la ruta final
-  /// o `null` si el usuario cancela la selección.
-  Future<String?> pickAndImport({required Directory targetDir});
+  /// [targetDir] con archivo temporal + renombrado. Devuelve la ruta final,
+  /// `null` si el usuario cancela la selección, o lanza
+  /// [ModelInstallException] si la copia falla. [onProgress] recibe el avance
+  /// de la copia (0..1) cuando el proveedor SAF informa el tamaño.
+  Future<String?> pickAndImport({
+    required Directory targetDir,
+    void Function(double progress)? onProgress,
+  });
 }
 
 /// Carpeta donde aterrizan las importaciones antes de que ModelManager las
@@ -86,7 +91,19 @@ class AssetModelInstaller implements ModelInstaller {
   }
 
   @override
-  Future<String?> pickAndImport({required Directory targetDir}) async {
+  Future<String?> pickAndImport({
+    required Directory targetDir,
+    void Function(double progress)? onProgress,
+  }) async {
+    if (onProgress != null) {
+      _channel.setMethodCallHandler((call) async {
+        if (call.method == 'progress') {
+          final data = call.arguments as Map<Object?, Object?>;
+          onProgress((data['progress'] as num).toDouble());
+        }
+        return null;
+      });
+    }
     try {
       return await _channel.invokeMethod<String>('pickAndImport', <String, String>{
         'targetDir': targetDir.path,
@@ -96,6 +113,8 @@ class AssetModelInstaller implements ModelInstaller {
         return null;
       }
       throw ModelInstallException(error.message ?? 'no se pudo importar el modelo');
+    } finally {
+      _channel.setMethodCallHandler(null);
     }
   }
 }

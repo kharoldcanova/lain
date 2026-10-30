@@ -29,6 +29,32 @@ class ModelScreen extends ConsumerStatefulWidget {
   ConsumerState<ModelScreen> createState() => _ModelScreenState();
 }
 
+enum _ImportPhase { preparando, copiando, verificando, registrando }
+
+const Map<_ImportPhase, String> _importTitles = <_ImportPhase, String>{
+  _ImportPhase.preparando: 'Preparando importación',
+  _ImportPhase.copiando: 'Copiando modelo',
+  _ImportPhase.verificando: 'Verificando integridad',
+  _ImportPhase.registrando: 'Registrando modelo',
+};
+
+const Map<_ImportPhase, String> _importMessages = <_ImportPhase, String>{
+  _ImportPhase.preparando: 'Elegí un archivo .gguf en tu dispositivo.',
+  _ImportPhase.copiando: 'Pasando el archivo al almacenamiento de LAIN.',
+  _ImportPhase.verificando: 'Calculando SHA-256. Esto puede tardar.',
+  _ImportPhase.registrando: 'Guardando metadatos y activando el modelo…',
+};
+
+/// Estado de una importación en curso.
+class _ImportProgress {
+  const _ImportProgress(this.phase, {this.progress});
+
+  final _ImportPhase phase;
+
+  /// Avance 0..1, o `null` cuando el proveedor no informa el tamaño.
+  final double? progress;
+}
+
 class _ModelScreenState extends ConsumerState<ModelScreen> {
   List<ModelMetadata> _models = <ModelMetadata>[];
   List<File> _orphans = <File>[];
@@ -123,78 +149,105 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
   Future<void> _importModel() async {
     final installer = ref.read(modelInstallerProvider);
     final cacheDir = await ref.read(importCacheDirProvider);
-
-    final String? picked;
-    try {
-      picked = await installer.pickAndImport(targetDir: cacheDir);
-    } on ModelInstallException catch (error) {
-      if (mounted) _snack(error.message);
-      return;
-    }
-    if (picked == null) return; // selección cancelada
-
-    final source = File(picked);
     final manager = await _manager();
-    final progress = ValueNotifier<double>(0);
+
+    final progress = ValueNotifier<_ImportProgress>(
+      const _ImportProgress(_ImportPhase.preparando),
+    );
     ModelMetadata? imported;
     Object? importError;
+    var cancelled = false;
 
-    // La importación corre de inmediato; el diálogo solo muestra el avance.
+    // La importación arranca de inmediato; el diálogo muestra cada fase.
     final done = () async {
       try {
+        String? picked;
+        try {
+          picked = await installer.pickAndImport(
+            targetDir: cacheDir,
+            onProgress: (value) {
+              progress.value = _ImportProgress(_ImportPhase.copiando, progress: value);
+            },
+          );
+        } on ModelInstallException catch (error) {
+          importError = error;
+          return;
+        }
+        if (picked == null) {
+          cancelled = true;
+          return;
+        }
+        final pickedPath = picked;
+
+        progress.value = const _ImportProgress(_ImportPhase.verificando);
         imported = await manager.importModel(
-          source: source,
+          source: File(pickedPath),
           family: 'language',
           freeBytes: installer.freeBytes,
-          onProgress: (value) => progress.value = value,
+          onProgress: (value) {
+            progress.value = _ImportProgress(_ImportPhase.verificando, progress: value);
+          },
         );
+        await File(pickedPath).delete().catchError((Object _) => File(pickedPath));
       } on Object catch (error) {
         importError = error;
+      }
+
+      if (imported != null) {
+        progress.value = const _ImportProgress(_ImportPhase.registrando);
+        try {
+          await manager.setActiveModel(imported!.id);
+          await _refresh();
+          await ref.read(chatControllerProvider.notifier).retry();
+        } on Object catch (error) {
+          importError = error;
+        }
       }
     }();
 
     if (!mounted) return;
-    await showDialog<void>(
+    final dialogFuture = showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        done.then((_) {
-          if (context.mounted) Navigator.of(context).pop();
-        });
-        return AlertDialog(
-          title: const Text('Importando modelo'),
-          content: ValueListenableBuilder<double>(
-            valueListenable: progress,
-            builder: (context, value, _) => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Copiando y verificando SHA-256. Esto puede tardar.'),
-                const SizedBox(height: 12),
-                LinearProgressIndicator(value: value),
+      builder: (context) => ValueListenableBuilder<_ImportProgress>(
+        valueListenable: progress,
+        builder: (context, value, _) => AlertDialog(
+          title: Text(_importTitles[value.phase]!),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_importMessages[value.phase]!),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(value: value.progress),
+              if (value.progress != null) ...[
                 const SizedBox(height: 4),
-                Text('${(value * 100).toStringAsFixed(0)} %'),
+                Text('${(value.progress! * 100).toStringAsFixed(0)} %'),
               ],
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
     await done;
+    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    await dialogFuture;
 
-    await source.delete().catchError((Object _) => source);
+    if (cancelled) {
+      if (mounted) _snack('Importación cancelada');
+      return;
+    }
     if (imported == null) {
       if (importError != null && mounted) _snack('$importError');
       return;
     }
-
-    try {
-      await manager.setActiveModel(imported!.id);
-      await _refresh();
-      await ref.read(chatControllerProvider.notifier).retry();
-      if (mounted) _snack('Modelo importado y activado: ${imported!.name}');
-    } on Object catch (error) {
-      if (mounted) _snack('$error');
+    if (importError != null) {
+      // El modelo quedó importado pero el registro/activación falló.
+      if (mounted) {
+        _snack('Modelo importado, pero no se pudo activar: $importError');
+      }
+      return;
     }
+    if (mounted) _snack('Modelo importado y activado: ${imported!.name}');
   }
 
   void _snack(String message) {

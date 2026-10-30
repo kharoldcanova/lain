@@ -44,6 +44,7 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
                     pendingImport = result
+                    _lastTargetDir = targetDir
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                         addCategory(Intent.CATEGORY_OPENABLE)
                         type = "*/*"
@@ -62,9 +63,14 @@ class MainActivity : FlutterActivity() {
         if (requestCode != PICK_MODEL_REQUEST) return
         val result = pendingImport ?: return
         pendingImport = null
-        val targetDir = data?.let { lastTargetDir } ?: return
-        if (resultCode != RESULT_OK || data == null || data.data == null) {
+        val targetDir = _lastTargetDir
+        _lastTargetDir = null
+        if (resultCode != RESULT_OK || data?.data == null) {
             result.error("pick_cancelled", "selección cancelada", null)
+            return
+        }
+        if (targetDir == null) {
+            result.error("import_failed", "no se registró la carpeta de destino", null)
             return
         }
         copyUri(data.data!!, targetDir, result)
@@ -81,6 +87,16 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun resolveSize(uri: Uri): Long {
+        return try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
+                ?.use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else -1L }
+                ?: -1L
+        } catch (error: Throwable) {
+            -1L
+        }
+    }
+
     /** Copia el archivo elegido con SAF a `targetDir/<nombre>` usando `.part` + renombrado. */
     private fun copyUri(uri: Uri, targetDir: String, result: MethodChannel.Result) {
         Thread {
@@ -89,11 +105,28 @@ class MainActivity : FlutterActivity() {
             val dest = File("$targetDir/$name")
             try {
                 File(targetDir).mkdirs()
+                val total = resolveSize(uri)
                 val input = contentResolver.openInputStream(uri)
                     ?: throw IllegalStateException("no se pudo abrir el archivo elegido")
                 input.use { stream ->
                     FileOutputStream(tmp).use { output ->
-                        stream.copyTo(output, BUFFER_SIZE)
+                        val buffer = ByteArray(BUFFER_SIZE)
+                        var copied = 0L
+                        var lastPercent = -1
+                        while (true) {
+                            val read = stream.read(buffer)
+                            if (read < 0) break
+                            output.write(buffer, 0, read)
+                            copied += read
+                            if (total > 0) {
+                                val percent = ((copied * 100) / total).toInt()
+                                // Reportar cada 2 % para no saturar el canal.
+                                if (percent != lastPercent && percent % 2 == 0) {
+                                    lastPercent = percent
+                                    reportProgress(percent / 100.0)
+                                }
+                            }
+                        }
                         output.fd.sync()
                     }
                 }
@@ -157,9 +190,6 @@ class MainActivity : FlutterActivity() {
     private fun postResult(block: () -> Unit) {
         runOnUiThread(block)
     }
-
-    private val lastTargetDir: String?
-        get() = _lastTargetDir
 
     private var _lastTargetDir: String? = null
 

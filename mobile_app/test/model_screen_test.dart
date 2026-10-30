@@ -35,9 +35,14 @@ class _FakeInstaller implements ModelInstaller {
   }) async {}
 
   @override
-  Future<String?> pickAndImport({required Directory targetDir}) async {
+  Future<String?> pickAndImport({
+    required Directory targetDir,
+    void Function(double progress)? onProgress,
+  }) async {
     final name = pickedFile;
     if (name == null) return null;
+    // Pausa breve para que el diálogo de fases se muestre antes de terminar.
+    await Future<void>.delayed(const Duration(milliseconds: 60));
     final file = File('${targetDir.path}/$name')..writeAsStringSync('gguf importado');
     return file.path;
   }
@@ -183,6 +188,8 @@ void main() {
     expect(inventory.first.name, 'qwen3-1.7b.Q4_K_M');
     // El archivo temporal de la caché no queda suelto.
     expect(cache.listSync(), isEmpty);
+    // Confirmación de éxito visible.
+    expect(find.textContaining('Modelo importado y activado'), findsOneWidget);
   });
 
   testWidgets('cancelar la selección no cambia nada', (tester) async {
@@ -202,5 +209,6 @@ void main() {
     expect(await tester.runAsync(manager.inventory), isEmpty);
     expect(await tester.runAsync(manager.activeModelId), isNull);
     expect(find.textContaining('No hay modelos registrados'), findsOneWidget);
+    expect(find.text('Importación cancelada'), findsOneWidget);
   });
 }

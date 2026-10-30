@@ -95,7 +95,11 @@ class FakeInstaller implements ModelInstaller {
   }
 
   @override
-  Future<String?> pickAndImport({required Directory targetDir}) async => null;
+  Future<String?> pickAndImport({
+    required Directory targetDir,
+    void Function(double progress)? onProgress,
+  }) async =>
+      null;
 }
 
 
