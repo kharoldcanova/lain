@@ -7,6 +7,7 @@
 - `mobile_app/test/model_store_test.dart`: 3 pruebas de la selección (sin GGUF, el más reciente gana, se ignoran archivos que no son `.gguf`).
 - `mobile_app/assets/models/MiniCPM5-2B.Q4_K_M.gguf`: el APK empaqueta MiniCPM5-2B Q4_K_M (1.45 GiB) en lugar de Qwen2.5-3B (1.8 GiB) para medir latencia en el teléfono (T15.6).
 - `mobile_app/README.md`: sección «Cambiar de modelo sin recompilar» con el flujo `adb push` + `lain_startup.log`.
+- `mobile_app/lib/presentation/chat/chat_screen.dart`: acción «Registro» en la AppBar para abrir `lain_startup.log` en cualquier estado (antes solo aparecía en los errores) y `mobile_app/test/widget_test.dart`: prueba de que el diálogo abre.
 - `mobile_app/android/app/src/main/cpp/lain_llm.c`: puente C con ABI mínima sobre llama.cpp (`lain_load`, `lain_free`, `lain_context_size`, `lain_format_prompt`, `lain_generate`) que emite cada token por callback.
 - `mobile_app/lib/data/llm/lain_native.dart`: bindings `dart:ffi` a `liblain_llm.so` con traducción de errores nativos a `LainException`.
 - `mobile_app/lib/data/llm/lain_engine.dart`: motor de inferencia en un isolate dedicado; tokens por `SendPort` como `Stream<String>`, `NativeCallable.isolateLocal` y `Utf8Chunker` para no partir caracteres UTF-8.

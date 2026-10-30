@@ -161,6 +161,16 @@ void main() {
     expect(find.text('Escribe un mensaje…'), findsOneWidget);
   });
 
+  testWidgets('abre el registro de arranque desde la AppBar', (tester) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Registro'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Registro de arranque'), findsOneWidget);
+  });
+
   testWidgets('enviar un mensaje muestra la respuesta del motor', (tester) async {
     final engine = FakeEngine();
     await tester.pumpWidget(_app(engine: engine));

@@ -76,6 +76,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
           IconButton(
+            onPressed: () => _showStartupLog(context),
+            icon: const Icon(Icons.receipt_long_outlined),
+            tooltip: 'Registro',
+          ),
+          IconButton(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const MemoryScreen()),
             ),
