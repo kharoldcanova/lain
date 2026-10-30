@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- `mobile_app/lib/presentation/models/model_screen.dart`: pantalla «Modelos» — inventario con tamaño/cuantización/familia, modelo activo, activación (recarga el motor liberando el GGUF anterior), eliminación con confirmación, modelos sueltos (`adb push`) e instalaciones incompletas; importación con diálogo de progreso.
+- `mobile_app/lib/presentation/models/model_screen.dart`: pantalla «Modelos» — inventario con tamaño/cuantización/familia, modelo activo, activación (recarga el motor liberando el GGUF anterior), eliminación con confirmación, modelos sueltos (`adb push`) e instalaciones incompletas; importación con diálogo de fases.
 - `mobile_app/test/model_screen_test.dart`: 5 pruebas de la pantalla (inventario, activar, eliminar aislado, importar, cancelar).
 - Importación SAF: `MainActivity.pickAndImport` (selector `ACTION_OPEN_DOCUMENT` + copia `.part` + renombrado a `files/imports/`) y `AssetModelInstaller.pickAndImport` en Dart.
 - `mobile_app/lib/data/llm/model_metadata.dart`: `ModelMetadata` (id, nombre, versión, arquitectura, formato, cuantización, familia, tamaño, SHA-256, motor compatible) con `model.json` por modelo y `quantizationFromName`/`sanitizeId`.
@@ -24,6 +24,8 @@
 - `mobile_app/test/widget_test.dart`: las pruebas del arranque ahora cubren «sin modelo: no copia nada y pide importarlo» y «la carga fallida muestra error del motor».
 
 ### Fixed
+- Importación SAF colgada sin feedback: `MainActivity` no guardaba el `targetDir` del picker, por lo que `onActivityResult` retornaba sin completar el canal (sin copia, sin diálogo, sin error); la cancelación del selector también se perdía. Ahora el destino se registra, la cancelación emite `pick_cancelled` y el result siempre se completa.
+- Progreso de importación visible: `copyUri` reporta el avance real cada 2 % (tamaño vía `OpenableColumns.SIZE`) y la pantalla «Modelos» muestra un diálogo con fases (Preparando → Copiando % → Verificando SHA-256 % → Registrando) y confirmación de éxito.
 - `mobile_app/lib/data/llm/model_store.dart`: `pickModelFile()` elige el `.gguf` modificado más recientemente en `files/models/`, así se cambia de modelo con `adb push` sin recompilar el APK (A/B MiniCPM ↔ Qwen) y `ModelLocation.fileName` informa el archivo en uso.
 - `mobile_app/test/model_store_test.dart`: 3 pruebas de la selección (sin GGUF, el más reciente gana, se ignoran archivos que no son `.gguf`).
 - `mobile_app/assets/models/MiniCPM5-2B.Q4_K_M.gguf`: el APK empaqueta MiniCPM5-2B Q4_K_M (1.45 GiB) en lugar de Qwen2.5-3B (1.8 GiB) para medir latencia en el teléfono (T15.6).
