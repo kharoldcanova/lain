@@ -95,8 +95,9 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 ### Funcionalidad 11: Modelo local pequeño con buen español (investigación)
 - [ ] T11.1 Evaluar candidatos pequeños con español fuerte (Salamandra-2B-Instruct, EuroLLM-1.7B, Qwen3-1.7B, Gemma-3-1B) verificando soporte en Unsloth y licencia.
 - [x] T11.2 Construir un set corto de evaluación en español: `test/eval_es.py` (8 casos, formato, latencia y JSON de salida).
-- [ ] T11.3 Medir el modelo actual contra los candidatos y registrar resultados.
+- [x] T11.3 Medir el modelo actual contra los candidatos y registrar resultados.
   - Medición informal del 2026-10-26: MiniCPM5-2B estable en formato (6/6) pero con errores de español (léxico inventado, concordancia, definiciones erróneas).
+  - Benchmark 2026-10-30 (60 escenarios, 82 turnos, llama.cpp `caa8191`, CPU 12 hilos, no-thinking): Qwen3-1.7B 11.06 tok/s (TTFT 477 ms), Qwen3-0.6B 26.72 tok/s (187 ms), Llama 3.2 1B 15.37 tok/s (194 ms). Calidad: Qwen3-1.7B español limpio y metacognición JSON impecable, pero en modo no-thinking emite SOLO el JSON (0/82 con `<think>`, sin respuesta visible) → requiere SFT/plantilla para el formato LAIN; Qwen3-0.6B descartada (ecos, fuga de `</tool_call>`, respuestas sin sentido); Llama 3.2 1B coherente pero rompe personaje («como modelo de lenguaje»), confabula y contamina formato. Recomendación pendiente de revisión (Fase C): Qwen3-1.7B como base.
 - [x] T11.4 Elegir el modelo base y adaptar `finetune.py` / `infer.py`. Decisión: Qwen2.5-3B-Instruct (texto).
 - [x] T11.5 Documentar la decisión, licencia y tamaño en RAM/GGUF. Licencia Qwen Research (no comercial); ~1.9–2.0 GB Q4_K_M.
 - [x] T11.6 Reentrenar y medir Qwen2.5-3B-Instruct (formato `<think>` + calidad de español) y decidir si se mantiene.

@@ -1,10 +1,10 @@
 # STATE.md
 
 ## Tarea en curso
-Fase B del empaquetado modular: **el APK ya no contiene modelos** (commit `8034c39`). El móvil sigue usando MiniCPM5-2B mientras el benchmark comparativo (Fase A) corre en el PC para elegir su sustituto (Qwen3-1.7B, Qwen3-0.6B, Llama 3.2 1B). Pendiente de Fase B: importación desde el sistema de archivos (SAF), pantalla de gestión de modelos (Fase 6) y verificación del APK release (sin GGUF, tamaño, persistencia al actualizar).
+Fase B del empaquetado modular: **el APK ya no contiene modelos** (commit `8034c39`, release verificado de 30.4 MB). Benchmark comparativo (Fase A) **completado en PC** con los 3 candidatos; recomendación presentada para revisión (Fase C): Qwen3-1.7B como base, con la salvedad de formato (en modo no-thinking emite solo el JSON de metacognición, sin `<think>` ni respuesta visible). Pendiente de Fase B: importación SAF + pantalla de gestión (Fase 6) y pruebas en el teléfono real (persistencia al actualizar, offline).
 
 ## Objetivo actual
-Cerrar Fase B (externalización + ModelManager con importación local y UI de gestión) y presentar los resultados del benchmark conversacional (60 escenarios en español) con la recomendación del modelo sustituto para revisión antes de integrarlo (Fase C).
+Cerrar Fase B (importación local + UI de gestión de modelos) y obtener la decisión del usuario sobre el modelo sustituto (Fase C) antes de integrarlo. Corrida suplementaria de Qwen3-1.7B con razonamiento nativo en curso para documentar la vía de integración del formato.
 
 
 ## Objetivo anterior
@@ -66,6 +66,8 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - Calidad del español mejoró frente a MiniCPM5-2B (frases completas, respuestas coherentes), pero siguen errores («Soyo soy es un modelo…», «los grupos más avances», corrección ortográfica equivocada en «Haber si mañana…») y una respuesta que valida el pensamiento negativo («No sirves para nada») en vez de acompañarlo → dataset a revisar en T11.7.
 - Decisión de producto: sustituir MiniCPM5-2B como modelo conversacional principal (español deficiente); Qwen2.5-3B queda en PC (latencia inaceptable en móvil). Evaluación comparativa autorizada de Qwen3-1.7B, Qwen3-0.6B y Llama 3.2 1B Instruct (benchmark de 60 escenarios en español en curso en el PC).
 - Fase B externalización (commit `8034c39`): el APK ya no empaqueta GGUF (asset quitado de `pubspec.yaml`, `noCompress` eliminado de gradle); arranque sin modelo con instrucciones claras; `ModelManager` (`lib/data/llm/model_manager.dart` + `model_metadata.dart`) con inventario `models/<id>/model.json`, importación con SHA-256 en un solo pase, verificación de espacio, copia temporal + renombrado atómico, detección de instalaciones incompletas, modelo activo (`active.json`) y eliminación que solo toca la carpeta del modelo; `locateModel()` conserva el fallback de GGUF sueltos (`adb push`). 65 pruebas en verde y `flutter analyze` limpio.
+- APK release verificado (5.6 parcial): 30.4 MB, sin GGUF/ONNX/pesos (solo `AssetManifest.bin` y `DebugProbesKt.bin`). Falta: instalación en dispositivo, persistencia al actualizar y offline.
+- Benchmark comparativo completado (PC, llama.cpp `caa8191`, CPU 12 hilos, `-ngl 0`, 60 escenarios / 82 turnos, muestreo no-thinking temp 0.7): Qwen3-1.7B TTFT medio 477 ms, 11.06 tok/s, ~2.32 GB VmHWM; Qwen3-0.6B 187 ms / 26.72 tok/s / ~1.24 GB; Llama 3.2 1B 194 ms / 15.37 tok/s / ~1.67 GB. Calidad: Qwen3-1.7B español limpio y JSON de metacognición impecable, pero emite SOLO el JSON (0/82 con `<think>`, sin respuesta visible) en modo no-thinking → el formato LAIN hay que fijarlo con SFT o plantilla; Qwen3-0.6B descartada (ecos del usuario, fuga de instrucciones `</tool_call>`, sin respuestas); Llama 3.2 1B coherente pero rompe personaje («como modelo de lenguaje»), confabula y contamina el formato (`<p>`, `**Think**`). Recomendación: Qwen3-1.7B como base (pendiente de revisión del usuario).
 
 ## Próximos pasos
 - Fase B (resto): importación de modelos desde el selector de archivos (SAF vía MethodChannel, reutilizando la copia con `.part` + renombrado), pantalla de gestión de modelos (Fase 6: inventario, importar, eliminar con confirmación, modelo activo), verificación del APK release (sin GGUF/ONNX, tamaño, persistencia del modelo y memoria al actualizar, offline).
