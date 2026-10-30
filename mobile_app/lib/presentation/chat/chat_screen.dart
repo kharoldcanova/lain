@@ -7,6 +7,7 @@ import '../../data/diagnostics/startup_log.dart';
 import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
 import '../memory/memory_screen.dart';
+import '../models/model_screen.dart';
 import 'chat_controller.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -79,6 +80,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onPressed: () => _showStartupLog(context),
             icon: const Icon(Icons.receipt_long_outlined),
             tooltip: 'Registro',
+          ),
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ModelScreen()),
+            ),
+            icon: const Icon(Icons.model_training_outlined),
+            tooltip: 'Modelos',
           ),
           IconButton(
             onPressed: () => Navigator.of(context).push(

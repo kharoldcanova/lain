@@ -145,6 +145,12 @@ void _engineWorker(List<Object> args) {
     switch (command[0]) {
       case 'load':
         try {
+          // Cambiar de modelo libera el anterior antes de cargar el nuevo:
+          // en móvil no caben dos GGUF residentes en RAM.
+          if (handle != 0) {
+            native.free(handle);
+            handle = 0;
+          }
           handle = native.load(
             command[1] as String,
             command[2] as int,

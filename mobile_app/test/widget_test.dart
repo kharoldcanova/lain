@@ -93,6 +93,9 @@ class FakeInstaller implements ModelInstaller {
       progress.add(1.0);
     }
   }
+
+  @override
+  Future<String?> pickAndImport({required Directory targetDir}) async => null;
 }
 
 
