@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lain_mobile/app.dart';
 import 'package:lain_mobile/data/llm/lain_engine.dart';
+import 'package:lain_mobile/data/llm/lain_native.dart';
 import 'package:lain_mobile/data/llm/model_installer.dart';
 import 'package:lain_mobile/data/llm/model_store.dart';
 import 'package:lain_mobile/data/diagnostics/startup_log.dart';
@@ -18,9 +19,10 @@ import 'package:lain_mobile/presentation/chat/chat_controller.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 class FakeEngine implements LainEngine {
-  FakeEngine({this.pieces = const <String>['Hola, ', 'soy LAIN.']});
+  FakeEngine({this.pieces = const <String>['Hola, ', 'soy LAIN.'], this.loadError});
 
   final List<String> pieces;
+  final String? loadError;
   bool _ready = false;
   final List<String> prompts = <String>[];
   final List<String> systems = <String>[];
@@ -31,6 +33,9 @@ class FakeEngine implements LainEngine {
 
   @override
   Future<void> loadModel(String path, {int contextSize = 2048, int threads = 4}) async {
+    if (loadError != null) {
+      throw LainException(loadError!);
+    }
     _ready = true;
     loadedPaths.add(path);
   }
@@ -326,17 +331,10 @@ void main() {
 
   // --- Pruebas del controlador con ProviderContainer (sin widget tree) ---
 
-  test('la ruta del asset usa el prefijo real del APK', () {
-    // Flutter empaqueta los assets bajo flutter_assets/; sin el prefijo,
-    // AssetManager.open lanza FileNotFoundException y el modelo nunca se copia.
-    expect(modelAssetPath, startsWith('flutter_assets/'));
-    expect(modelAssetPath, endsWith(modelFileName));
-  });
-
-  test('copia el modelo empaquetado la primera vez y lo carga', () async {
+  test('sin modelo instalado no copia nada y pide importarlo', () async {
     final dir = await Directory.systemTemp.createTemp('lain-test');
     addTearDown(() => dir.delete(recursive: true));
-    final target = '${dir.path}/models/$modelFileName';
+    final modelsDir = '${dir.path}/models';
 
     final container = ProviderContainer(
       overrides: [
@@ -346,7 +344,7 @@ void main() {
         localInferenceProvider.overrideWithValue(true),
         modelInstallerProvider.overrideWithValue(FakeInstaller()),
         modelLocatorProvider.overrideWithValue(
-          () async => ModelLocation(expectedPath: target),
+          () async => ModelLocation(expectedPath: modelsDir),
         ),
         systemPromptProvider.overrideWith((ref) async => 'Eres LAIN.'),
       ],
@@ -356,28 +354,27 @@ void main() {
     final engine = container.read(lainEngineProvider) as FakeEngine;
     final installer = container.read(modelInstallerProvider) as FakeInstaller;
 
-    // Espera a que _init() resuelva el estado (loading/preparingModel -> ready/error).
     final state = await _awaitState(container);
 
-    expect(installer.assets, <String>[modelAssetPath]);
-    expect(installer.targets, <String>[target]);
-    expect(engine.loadedPaths, <String>[target]);
-    expect(state.status, EngineStatus.ready);
+    expect(installer.assets, isEmpty);
+    expect(installer.targets, isEmpty);
+    expect(engine.loadedPaths, isEmpty);
+    expect(state.status, EngineStatus.missingModel);
+    expect(state.error, contains('import'));
   });
 
-  test('si la copia falla muestra error del motor', () async {
+  test('si la carga del modelo falla muestra error del motor', () async {
     final container = ProviderContainer(
       overrides: [
-        lainEngineProvider.overrideWithValue(FakeEngine()),
+        lainEngineProvider.overrideWithValue(FakeEngine(loadError: 'gguf corrupto')),
         chatStoreProvider.overrideWith((ref) async => FakeChatStore()),
         memoryStoreProvider.overrideWith((ref) async => _memoryStore()),
         localInferenceProvider.overrideWithValue(true),
-        modelInstallerProvider.overrideWithValue(
-          FakeInstaller(failure: 'sin espacio en el dispositivo'),
-        ),
+        modelInstallerProvider.overrideWithValue(FakeInstaller()),
         modelLocatorProvider.overrideWithValue(
-          () async => const ModelLocation(
+          () async => ModelLocation(
             expectedPath: '/tmp/models/model.gguf',
+            file: File('/tmp/models/model.gguf'),
           ),
         ),
         systemPromptProvider.overrideWith((ref) async => 'Eres LAIN.'),
@@ -388,7 +385,7 @@ void main() {
     final state = await _awaitState(container);
 
     expect(state.status, EngineStatus.error);
-    expect(state.error, contains('sin espacio'));
+    expect(state.error, contains('gguf corrupto'));
   });
 }
 

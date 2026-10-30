@@ -192,15 +192,15 @@ class _StatusBanner extends ConsumerWidget {
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
           'Preparando el modelo',
-          'Copiando el GGUF incluido en la app. Solo ocurre la primera vez.',
+          'Importando el modelo al almacenamiento de LAIN. Solo ocurre la '
+              'primera vez.',
         ),
       EngineStatus.missingModel => (
           const Icon(Icons.folder_off_outlined, size: 20, color: LainColors.primary),
           'Falta el modelo',
           state.error ??
-              'No se pudo preparar el GGUF incluido en la app. '
-                  'Revisá que queden ~1.9 GB libres y reinstalá el APK.\n'
-                  'Ruta esperada: ${state.modelPath ?? "desconocida"}',
+              'No hay ningún modelo de lenguaje instalado. Importá un archivo '
+                  '.gguf para hablar conmigo.',
         ),
       EngineStatus.unsupported => (
           const Icon(Icons.devices_other, size: 20, color: LainColors.primary),

@@ -25,7 +25,7 @@ class ChatState {
   final String? error;
   final String? modelPath;
 
-  /// Avance de la copia del modelo empaquetado (0..1).
+  /// Avance de una importación de modelo (0..1).
   final double? progress;
   final bool generating;
 

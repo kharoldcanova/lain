@@ -17,9 +17,8 @@ import '../../domain/chat/chat_state.dart';
 import '../../domain/chat/think_parser.dart';
 import '../../domain/memory/belief_capture.dart';
 
-/// Espacio mínimo para copiar el GGUF (1.45 GiB) con margen.
-const int minimumFreeBytes = 1900 * 1024 * 1024;
-
+/// El motor de inferencia es local (dart:ffi) y solo se inicia cuando hay un
+/// modelo instalado en el almacenamiento privado (ver `model_store.dart`).
 final lainEngineProvider = Provider<LainEngine>((ref) {
   final engine = NativeLainEngine();
   ref.onDispose(engine.dispose);
@@ -83,53 +82,26 @@ class ChatController extends Notifier<ChatState> {
     try {
       await StartupLog.write('init: buscando el modelo');
       final location = await ref.read(modelLocatorProvider)();
-      var file = location.file;
+      final file = location.file;
       await StartupLog.write(
-        'init: modelo=${location.fileName} existe=${file != null} '
-        'ruta=${location.expectedPath}',
+        'init: modelo=${file == null ? 'ninguno' : location.fileName} '
+        'existe=${file != null} ruta=${location.expectedPath}',
       );
 
       if (file == null) {
-        // Primer arranque: el GGUF viene dentro del APK y se copia aquí.
+        // Sin modelo instalado: LAIN arranca igual y pide importar uno.
+        await StartupLog.write('init: no hay modelo instalado');
         state = state.copyWith(
-          status: EngineStatus.preparingModel,
+          status: EngineStatus.missingModel,
           modelPath: location.expectedPath,
-          progress: 0,
+          clearProgress: true,
+          error: 'No hay ningún modelo de lenguaje instalado.\n\n'
+              'Para hablar conmigo, importá un archivo .gguf a la carpeta de '
+              'modelos de LAIN. Por ahora podés copiarlo con adb:\n'
+              'adb push tu-modelo.gguf ${location.expectedPath}/\n\n'
+              'La importación desde la app llega en la próxima actualización.',
         );
-        final installer = ref.read(modelInstallerProvider);
-        final free = await installer.freeBytes();
-        await StartupLog.write('init: espacio libre=$free bytes');
-        if (free > 0 && free < minimumFreeBytes) {
-          await StartupLog.write('init: espacio insuficiente para el modelo');
-          state = state.copyWith(
-            status: EngineStatus.missingModel,
-            modelPath: location.expectedPath,
-            clearProgress: true,
-            error: 'Quedan ${_gigabytes(free)} GB libres y hacen falta '
-                '${_gigabytes(minimumFreeBytes)} GB para copiar el modelo.',
-          );
-          return;
-        }
-
-        await StartupLog.write('init: copiando el modelo desde los assets');
-        await installer.install(
-          assetPath: modelAssetPath,
-          targetPath: location.expectedPath,
-          onProgress: (progress) {
-            state = state.copyWith(progress: progress);
-          },
-        );
-        await StartupLog.write('init: copia terminada');
-        file = File(location.expectedPath);
-        if (!await file.exists()) {
-          await StartupLog.write('init: el archivo no existe tras la copia');
-          state = state.copyWith(
-            status: EngineStatus.missingModel,
-            modelPath: location.expectedPath,
-            clearProgress: true,
-          );
-          return;
-        }
+        return;
       }
 
       state = state.copyWith(
@@ -157,9 +129,6 @@ class ChatController extends Notifier<ChatState> {
     );
     await _init();
   }
-
-  String _gigabytes(int bytes) =>
-      (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1);
 
   Future<void> _restoreHistory() async {
     try {

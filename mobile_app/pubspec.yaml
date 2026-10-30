@@ -26,4 +26,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/system_prompt.txt
-    - assets/models/MiniCPM5-2B.Q4_K_M.gguf
+    # Los modelos GGUF NO van en el APK: se gestionan en el almacenamiento
+    # privado de la app mediante ModelManager (ver lib/data/llm/model_manager.dart).

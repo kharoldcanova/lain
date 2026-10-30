@@ -2,9 +2,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-/// Nombre del GGUF empaquetado en el APK. Se usa como destino de la copia en el
-/// primer arranque y como modelo por defecto cuando la carpeta está vacía.
-const String modelFileName = 'MiniCPM5-2B.Q4_K_M.gguf';
+import 'model_manager.dart';
 
 class ModelLocation {
   const ModelLocation({required this.expectedPath, this.file});
@@ -14,12 +12,15 @@ class ModelLocation {
 
   bool get exists => file != null;
 
-  /// Nombre del archivo a cargar (`MiniCPM5-2B.Q4_K_M.gguf`).
+  /// Nombre del archivo a cargar.
   String get fileName => expectedPath.split('/').last;
 }
 
-/// Carpeta donde la app busca el modelo. En Android es
-/// `/storage/emulated/0/Android/data/<paquete>/files/models`, accesible por adb.
+/// Carpeta raíz de modelos de la app. En Android es
+/// `/storage/emulated/0/Android/data/<paquete>/files/models` (almacenamiento
+/// privado de la app según scoped storage: no es almacenamiento público,
+/// sobrevive a las actualizaciones y es accesible por `adb` para pruebas).
+/// Se elimina solo al desinstalar la app.
 Future<Directory> modelDirectory() async {
   final base = await getExternalStorageDirectory() ??
       await getApplicationDocumentsDirectory();
@@ -30,11 +31,12 @@ Future<Directory> modelDirectory() async {
   return dir;
 }
 
-/// Elige el GGUF a cargar entre los que haya en `models/`.
+/// Elige el GGUF a cargar entre los que haya en una carpeta.
 ///
 /// Gana el modificado más recientemente: así se cambia de modelo con
 /// `adb push` (que marca la hora actual) sin recompilar el APK y se puede
-/// comparar uno contra otro en el mismo teléfono.
+/// comparar uno contra otro en el mismo teléfono. Es el fallback para los
+/// GGUF sueltos anteriores a ModelManager.
 File? pickModelFile(List<File> files) {
   final candidates = files
       .where((file) => file.path.toLowerCase().endsWith('.gguf'))
@@ -47,19 +49,38 @@ File? pickModelFile(List<File> files) {
   return candidates.first;
 }
 
-List<File> _ggufFilesIn(Directory dir) {
-  try {
-    return dir.listSync().whereType<File>().toList();
-  } on FileSystemException {
-    return <File>[];
-  }
-}
+/// Localiza el modelo que debe cargar el motor de inferencia.
+///
+/// Orden de preferencia:
+/// 1. el modelo activo registrado por ModelManager;
+/// 2. el GGUF suelto más reciente en la raíz (modelos por `adb push`);
+/// 3. el primer modelo registrado del inventario.
+Future<ModelLocation> locateModel() async => locateModelIn(await modelDirectory());
 
-Future<ModelLocation> locateModel() async {
-  final dir = await modelDirectory();
-  final installed = pickModelFile(_ggufFilesIn(dir));
-  if (installed != null) {
-    return ModelLocation(expectedPath: installed.path, file: installed);
+/// Igual que [locateModel] pero sobre una carpeta dada (pruebas).
+Future<ModelLocation> locateModelIn(Directory dir) async {
+  final manager = ModelManager(dir);
+
+  final active = await manager.activeModel();
+  if (active != null) {
+    final file = File(active.filePath(dir.path));
+    if (file.existsSync()) {
+      return ModelLocation(expectedPath: file.path, file: file);
+    }
   }
-  return ModelLocation(expectedPath: '${dir.path}/$modelFileName');
+
+  final legacy = pickModelFile(await manager.orphanGgufs());
+  if (legacy != null) {
+    return ModelLocation(expectedPath: legacy.path, file: legacy);
+  }
+
+  final registered = await manager.inventory();
+  for (final metadata in registered) {
+    final file = File(metadata.filePath(dir.path));
+    if (file.existsSync()) {
+      return ModelLocation(expectedPath: file.path, file: file);
+    }
+  }
+
+  return ModelLocation(expectedPath: dir.path);
 }

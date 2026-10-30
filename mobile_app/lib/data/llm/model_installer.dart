@@ -1,12 +1,11 @@
 import 'package:flutter/services.dart';
 
-import 'model_store.dart';
-
-/// Copia el GGUF empaquetado en el APK al almacenamiento de la app.
+/// Canal nativo de Android para operaciones de almacenamiento del modelo.
 ///
-/// Flutter no puede leer un asset de 1.9 GB en streaming (`rootBundle.load` lo
-/// carga entero en RAM), así que la copia la hace Android con
-/// `AssetManager.open` y reporta el progreso por un `MethodChannel`.
+/// Antes copiaba el GGUF empaquetado en el APK; ahora la app no empaqueta
+/// modelos (ver `model_manager.dart`). El canal se conserva porque
+/// `freeBytes` y la copia con archivo temporal + renombrado se reutilizan
+/// para la importación de modelos desde archivos locales.
 abstract interface class ModelInstaller {
   /// Espacio libre en bytes del almacenamiento donde se copia el modelo.
   /// Devuelve 0 cuando la plataforma no puede informarlo.
@@ -74,10 +73,3 @@ class ModelInstallException implements Exception {
   @override
   String toString() => message;
 }
-
-/// Ruta del GGUF dentro del APK tal como la ve `AssetManager`.
-///
-/// Flutter empaqueta los assets del proyecto bajo `flutter_assets/`, así que
-/// `AssetManager.open("assets/...")` no los encuentra: hay que pedir la ruta
-/// real del APK.
-const String modelAssetPath = 'flutter_assets/assets/models/$modelFileName';

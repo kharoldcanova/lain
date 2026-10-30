@@ -42,11 +42,9 @@ android {
         }
     }
 
-    // El GGUF va como asset sin comprimir: AssetManager.open() en streaming lo
-    // necesita y evita descomprimir 1.9 GB al copiarlo a files/models.
-    androidResources {
-        noCompress += "gguf"
-    }
+    // Sin GGUF en el APK: los modelos viven en el almacenamiento privado de la
+    // app y se importan con ModelManager, así que no hay reglas de compresión
+    // de assets grandes.
 
     buildTypes {
         release {
