@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### Added
+- `mobile_app/lib/data/llm/model_store.dart`: `pickModelFile()` elige el `.gguf` modificado más recientemente en `files/models/`, así se cambia de modelo con `adb push` sin recompilar el APK (A/B MiniCPM ↔ Qwen) y `ModelLocation.fileName` informa el archivo en uso.
+- `mobile_app/test/model_store_test.dart`: 3 pruebas de la selección (sin GGUF, el más reciente gana, se ignoran archivos que no son `.gguf`).
+- `mobile_app/assets/models/MiniCPM5-2B.Q4_K_M.gguf`: el APK empaqueta MiniCPM5-2B Q4_K_M (1.45 GiB) en lugar de Qwen2.5-3B (1.8 GiB) para medir latencia en el teléfono (T15.6).
+- `mobile_app/README.md`: sección «Cambiar de modelo sin recompilar» con el flujo `adb push` + `lain_startup.log`.
 - `mobile_app/android/app/src/main/cpp/lain_llm.c`: puente C con ABI mínima sobre llama.cpp (`lain_load`, `lain_free`, `lain_context_size`, `lain_format_prompt`, `lain_generate`) que emite cada token por callback.
 - `mobile_app/lib/data/llm/lain_native.dart`: bindings `dart:ffi` a `liblain_llm.so` con traducción de errores nativos a `LainException`.
 - `mobile_app/lib/data/llm/lain_engine.dart`: motor de inferencia en un isolate dedicado; tokens por `SendPort` como `Stream<String>`, `NativeCallable.isolateLocal` y `Utf8Chunker` para no partir caracteres UTF-8.
@@ -24,6 +28,7 @@
 - `mobile_app/test/think_parser_test.dart`: 6 pruebas del parser (bloque simple, fragmentado, falso positivo, múltiples bloques, sin cierre y sin bloque).
 
 ### Fixed
+- `mobile_app/README.md` / `STATE.md`: el build documentado era `flutter build apk --release --split-per-abi`, pero con el `abiFilters` añadido el 2026-10-28 AGP aborta por configuración conflictiva. El build correcto es universal (`flutter build apk --release`).
 - `mobile_app/lib/data/llm/model_installer.dart`: `modelAssetPath` apuntaba a `assets/models/…`, pero Flutter empaqueta los assets bajo `assets/flutter_assets/`; `AssetManager` lanzaba `FileNotFoundException` y la copia del GGUF fallaba siempre con «Error del motor». Ahora usa `flutter_assets/assets/models/…`, con prueba de regresión del prefijo.
 - `mobile_app/README.md`: el build recomendado es `--split-per-abi`; `--target-platform android-arm64` con `jniLibs` de dos ABIs genera un APK que crashea en x86_64.
 
@@ -38,6 +43,8 @@
 - `mobile_app/pubspec.yaml`: `sqlite3`, `crypto` y `path`; se retiran `sqflite` y `sqflite_common_ffi`.
 - `mobile_app/lib/presentation/chat/chat_controller.dart`: `memoryStoreProvider`; guarda el prompt, inyecta el bloque `[MEMORIA]` en el system prompt y registra la creencia del turno.
 - `mobile_app/lib/presentation/chat/chat_screen.dart`: acción «Memoria» en la AppBar; botones «Reintentar» y «Ver registro» (con copia al portapapeles) en los estados de error.
+- `mobile_app/lib/presentation/chat/chat_controller.dart`: el arranque registra el modelo elegido (`init: modelo=<nombre>`) y el mínimo de espacio libre baja a 1.9 GB por el GGUF de 1.45 GiB.
+- `mobile_app/lib/presentation/chat/chat_screen.dart`: el estado «Cargando modelo» muestra el nombre real del GGUF y el aviso de espacio pasa a ~1.9 GB.
 - `mobile_app/lib/presentation/chat/chat_controller.dart`: el arranque escribe cada paso en `StartupLog`, comprueba el espacio libre antes de copiar el GGUF (mínimo 2.4 GB) y expone `retry()`.
 - `mobile_app/android/.../MainActivity.kt`: método `freeBytes` del canal para consultar el espacio disponible.
 - `mobile_app/android/app/build.gradle.kts`: `packaging { jniLibs { useLegacyPackaging = true } }` para extraer las `.so` al instalar (`dlopen` por nombre).

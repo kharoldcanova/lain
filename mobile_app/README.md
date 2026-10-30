@@ -1,8 +1,12 @@
 # LAIN Mobile (Flutter)
 
-App Android con inferencia **100% local**: el GGUF de Qwen2.5-3B-Instruct corre
-dentro del teléfono mediante `llama.cpp` compilado para Android y expuesto a
-Dart por un puente C mínimo (`dart:ffi`). No hay red ni servicios externos.
+App Android con inferencia **100% local**: un GGUF corre dentro del teléfono
+mediante `llama.cpp` compilado para Android y expuesto a Dart por un puente C
+mínimo (`dart:ffi`). No hay red ni servicios externos.
+
+El modelo empaquetado es **MiniCPM5-2B Q4_K_M** (1.45 GiB), elegido para medir
+si un 2B rinde mejor que el Qwen2.5-3B (1.8 GiB) en CPU de teléfono. Cualquier
+GGUF con plantilla ChatML sirve: ver «Cambiar de modelo sin recompilar».
 
 ## Cómo está conectado el modelo
 
@@ -39,11 +43,11 @@ ChatScreen ──► ChatController ──► LainEngine (Dart)
    `python_ai/datasets/system_prompt.txt`) se aplica con la plantilla ChatML que
    trae el propio GGUF (`llama_chat_apply_template`).
 
-El modelo **sí** viaja dentro del APK (1.93 GB) y la app lo copia al primer
+El modelo **sí** viaja dentro del APK (~1.5 GB) y la app lo copia al primer
 arranque en:
 
 ```
-/storage/emulated/0/Android/data/com.lain.lain_mobile/files/models/Qwen2.5-3B-Instruct.Q4_K_M.gguf
+/storage/emulated/0/Android/data/com.lain.lain_mobile/files/models/MiniCPM5-2B.Q4_K_M.gguf
 ```
 
 ## Requisitos (todo en espacio de usuario)
@@ -79,21 +83,22 @@ Detalle importante: el puente se genera como **`liblain_llm.so`** (con prefijo
 ## Compilar e instalar el APK
 
 ```bash
-# Un APK por ABI: cada uno lleva solo su libflutter.so y sus .so.
-flutter build apk --release --split-per-abi
-# -> build/app/outputs/flutter-apk/app-arm64-v8a-release.apk   (teléfono)
-# -> build/app/outputs/flutter-apk/app-x86_64-release.apk      (emulador)
-# `abiFilters` limita el build a arm64-v8a y x86_64: las demás ABIs no tienen
-# las .so de llama.cpp y darían un APK roto.
+# Un solo APK universal: solo empaqueta arm64-v8a y x86_64 (abiFilters).
+flutter build apk --release
+# -> build/app/outputs/flutter-apk/app-release.apk
 
-adb install -r build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
+
+`--split-per-abi` **no** se puede combinar con `abiFilters` en
+`defaultConfig`: AGP aborta con «Conflicting configuration: 'arm64-v8a,x86_64'
+in ndk abiFilters cannot be present when splits abi filters are set». El APK
+universal ya queda limitado a las ABIs con `.so` de llama.cpp.
 
 No usar `--target-platform android-arm64` con las `.so` de `jniLibs/` de ambas
 ABIs: el APK quedaría con `libflutter.so` solo arm64 y las librerías x86_64, y
 en un dispositivo x86_64 el arranque muere con
 `dlopen failed: libflutter.so is for EM_AARCH64 instead of EM_X86_64`.
-`--split-per-abi` evita esa mezcla.
 
 `android/app/build.gradle.kts` activa `packaging { jniLibs { useLegacyPackaging = true } }`
 para que las `.so` se extraigan al instalar: con `extractNativeLibs=false`
@@ -113,7 +118,7 @@ la app arranca directo al chat.
 No hace falta `adb push` ni conectar el celular por USB. El usuario solo
 instala el APK y usa la app.
 
-El primer arranque necesita **~2.4 GB libres** además de lo que ocupa el APK
+El primer arranque necesita **~1.9 GB libres** además de lo que ocupa el APK
 instalado, porque el GGUF se copia a `files/models/`. Si no alcanzan, la app lo
 avisa y ofrece **Reintentar** y **Ver registro** (`lain_startup.log`, copiable
 al portapapeles) en el banner de error.
@@ -123,6 +128,28 @@ al portapapeles) en el banner de error.
 adb shell rm -rf /sdcard/Android/data/com.lain.lain_mobile/files/models
 adb shell am start -n com.lain.lain_mobile/.MainActivity
 ```
+
+## Cambiar de modelo sin recompilar
+
+`locateModel()` usa **el `.gguf` modificado más recientemente** dentro de
+`files/models/`, así que se puede comparar MiniCPM contra Qwen en el mismo
+teléfono sin reconstruir el APK: `adb push` marca la hora actual y ese modelo
+gana en el siguiente arranque.
+
+```bash
+DIR=/sdcard/Android/data/com.lain.lain_mobile/files/models
+adb push python_ai/outputs/Qwen2.5-3B-Instruct.Q4_K_M.gguf $DIR/   # ahora gana Qwen
+adb shell am force-stop com.lain.lain_mobile
+adb shell am start -n com.lain.lain_mobile/.MainActivity
+```
+
+El arranque deja en `lain_startup.log` qué archivo cargó
+(`init: modelo=<nombre> ...`) y, al final de cada turno,
+`turno: ttft=<ms> total=<ms> chars=<n>`; esos dos números son la medición.
+
+Para volver a MiniCPM basta con volver a empujarlo (o `adb shell touch` del
+archivo). Con varios GGUF en la carpeta el APK no vuelve a copiar el asset:
+solo copia si la carpeta está vacía.
 
 ## Pruebas
 

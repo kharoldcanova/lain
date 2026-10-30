@@ -46,7 +46,8 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - `lib/data/storage/lain_database.dart` (esquema v1, tabla `messages` con `role`, `text`, `thought`, `created_at`) y `lib/data/storage/chat_store.dart` (`loadRecent`, `saveTurn` transaccional, `clear`). El controlador restaura el historial al abrir, guarda cada turno y permite borrarlo con confirmación. Degradación explícita: si la base no abre, el chat funciona sin memoria. 4 pruebas del store con SQLite real (`sqflite_common_ffi`) y 19 en total.
 - [ ] T1.8 Medir y reducir la latencia de respuesta (bloqueante para uso real).
   - Medido en emulador x86_64: copia del GGUF 18 s (solo la primera vez) y carga del modelo 7–11 s. En el APK arm64 probado en teléfono la respuesta **tarda demasiado**: la latencia es inaceptable para conversación.
-  - Sospecha: prompt de sistema largo (~1.5k tokens) + bloque `[MEMORIA]` + 3B Q4 en CPU. Siguiente paso: registrar `ttft`/`total` por turno en `lain_startup.log`, recortar el prompt y evaluar un modelo menor (T15).
+  - Sospecha: prompt de sistema largo (~2.9 KB de prompt formateado) + bloque `[MEMORIA]` + modelo grande en CPU. Instrumentación lista: `lain_startup.log` registra `init: modelo=<nombre>` y `turno: ttft=<ms> total=<ms> chars=<n>` por turno.
+  - Falta la medición arm64 real; el APK ya se puede probar con MiniCPM o Qwen sin recompilar (ver T15.6).
 
 ### Funcionalidad 2: Reconocimiento de voz a texto (STT)
 - [ ] T2.1 Capturar audio del micrófono en Flutter.
@@ -112,6 +113,11 @@ Pixys es la ruta de aprendizaje para construirlo (vault Obsidian: `Boveda/AI/IA/
 - [ ] T15.3 Definir el criterio de aceptación: tamaño del GGUF, RAM, TTFT y calidad mínima en español.
 - [ ] T15.4 Avanzar la ruta Pixys en paralelo (Fase 1: perceptrón multicapa en NumPy) sin bloquear LAIN.
 - [ ] T15.5 Decidir entre destilar el 3B actual o entrenar desde cero un modelo propio con tokenizer español.
+- [ ] T15.6 Probar MiniCPM5-2B como modelo local del teléfono (1.45 GiB frente a 1.8 GiB del Qwen2.5-3B).
+  - Medición en CPU del PC (4 hilos, `n_gpu_layers=0`, 5 prompts, 180 tokens): MiniCPM 11.8 s/turno (~11.4 tok/s) vs Qwen 16.0 s/turno (~8.2 tok/s); ~26 % menos latencia, formato `<think>` 5/5 válido en ambos.
+  - Calidad: el español empeora (caracteres chinos sueltos, léxico inventado), aunque el caso «no sirvo para nada» lo trató mejor que Qwen.
+  - App: APK release 1.59 GB con el GGUF empaquetado; verificado en emulador x86_64 (carga, copia y respuesta `<think>` JSON válido). Selección de modelo por `.gguf` más reciente en `files/models/` para A/B con `adb push`.
+  - Pendiente: medir TTFT/total en teléfono arm64 y comparar contra Qwen con los mismos turnos.
 
 ### Funcionalidad 14: Memoria persistente local (estilo Engram)
 - [x] T14.1 Migrar el motor a `package:sqlite3` (SQLite empaquetado con FTS5 garantizado) y retirar `sqflite`.

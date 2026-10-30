@@ -17,8 +17,8 @@ import '../../domain/chat/chat_state.dart';
 import '../../domain/chat/think_parser.dart';
 import '../../domain/memory/belief_capture.dart';
 
-/// Espacio mínimo para copiar el GGUF (1.93 GB) con margen.
-const int minimumFreeBytes = 2400 * 1024 * 1024;
+/// Espacio mínimo para copiar el GGUF (1.45 GiB) con margen.
+const int minimumFreeBytes = 1900 * 1024 * 1024;
 
 final lainEngineProvider = Provider<LainEngine>((ref) {
   final engine = NativeLainEngine();
@@ -85,7 +85,8 @@ class ChatController extends Notifier<ChatState> {
       final location = await ref.read(modelLocatorProvider)();
       var file = location.file;
       await StartupLog.write(
-        'init: existe=${file != null} ruta=${location.expectedPath}',
+        'init: modelo=${location.fileName} existe=${file != null} '
+        'ruta=${location.expectedPath}',
       );
 
       if (file == null) {
@@ -131,7 +132,11 @@ class ChatController extends Notifier<ChatState> {
         }
       }
 
-      state = state.copyWith(status: EngineStatus.loading, clearProgress: true);
+      state = state.copyWith(
+        status: EngineStatus.loading,
+        clearProgress: true,
+        modelPath: file.path,
+      );
       await StartupLog.write('init: cargando el modelo en llama.cpp');
       await ref.read(lainEngineProvider).loadModel(file.path);
       await StartupLog.write('init: modelo cargado');

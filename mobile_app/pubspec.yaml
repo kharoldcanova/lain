@@ -26,4 +26,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/system_prompt.txt
-    - assets/models/Qwen2.5-3B-Instruct.Q4_K_M.gguf
+    - assets/models/MiniCPM5-2B.Q4_K_M.gguf

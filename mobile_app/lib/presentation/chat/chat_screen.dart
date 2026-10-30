@@ -177,7 +177,8 @@ class _StatusBanner extends ConsumerWidget {
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
           'Cargando modelo',
-          'Qwen2.5-3B-Instruct en memoria. Puede tardar unos segundos.',
+          '${state.modelPath?.split('/').last ?? 'El GGUF'} en memoria. '
+              'Puede tardar unos segundos.',
         ),
       EngineStatus.preparingModel => (
           const SizedBox(
@@ -193,7 +194,7 @@ class _StatusBanner extends ConsumerWidget {
           'Falta el modelo',
           state.error ??
               'No se pudo preparar el GGUF incluido en la app. '
-                  'Revisá que queden ~2.4 GB libres y reinstalá el APK.\n'
+                  'Revisá que queden ~1.9 GB libres y reinstalá el APK.\n'
                   'Ruta esperada: ${state.modelPath ?? "desconocida"}',
         ),
       EngineStatus.unsupported => (

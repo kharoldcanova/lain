@@ -1,10 +1,10 @@
 # STATE.md
 
 ## Tarea en curso
-Fase 2 avanzada: la app Flutter ya hace inferencia real en Android con el GGUF de Qwen2.5-3B-Instruct empaquetado en el APK (T1.2–T1.6), verificado: APK release 1.96 GB con el GGUF y las `.so` para arm64-v8a y x86_64, `flutter analyze` limpio, 5 pruebas en verde. T1.7 cerrado (bloque `think` separado y colapsable), T1.9 cerrado (historial en SQLite) y T14 cerrada (memoria persistente estilo Engram: observaciones con FTS5 trigram, deduplicación, creencias del bloque `think`, recall en el prompt y pantalla de revisión). Sigue pendiente medir latencia en un teléfono arm64 real (T1.8). En paralelo, la calidad del modelo sigue abierta (T11.7).
+Prueba de **MiniCPM5-2B Q4_K_M** como modelo local del teléfono (1.45 GiB frente a 1.8 GiB del Qwen2.5-3B), para ver si un 2B desatasca la latencia (T15.6). La app ya lo empaqueta, lo carga y responde con bloque `<think>` JSON válido en el emulador x86_64. Se añadió selección de modelo por carpeta (`files/models/`): gana el `.gguf` modificado más recientemente, así se compara MiniCPM contra Qwen con `adb push` sin recompilar el APK. Falta la medición en un teléfono arm64 real: el usuario la hará con el APK ya compilado.
 
 ## Objetivo actual
-Medir y reducir la latencia (T1.8): hoy la respuesta tarda demasiado en el teléfono; después, dar contexto multi-turno al modelo (el puente C solo acepta system+user) y seguir con STT (Fase 2, Funcionalidad 2).
+Medir MiniCPM5-2B en un teléfono arm64 (TTFT y total por turno desde `lain_startup.log`, T1.8/T15.6) y compararlo contra Qwen2.5-3B con los mismos prompts. Después: recortar el prompt de sistema y el bloque `[MEMORIA]`, dar contexto multi-turno al puente C y seguir con STT (Fase 2).
 
 
 ## Objetivo anterior
@@ -28,7 +28,9 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - VLM y LLM no deben convivir en VRAM: el VLM se libera antes de cargar Qwen (~3.0 GB + ~1.9 GB no caben juntos en 6 GB).
 - Entorno Python: requiere Python 3.12 (Unsloth no soporta 3.13+); `torch`/`torchvision` deben ser de la misma build CUDA (cu126).
 - Latencia inaceptable en móvil: Qwen2.5-3B Q4_K_M en CPU responde con una demora muy alta para conversación (reportado al probar el APK arm64). El prompt de sistema (~1.5k tokens) más el bloque `[MEMORIA]` agravan el TTFT; es el argumento principal de T15 (modelo pequeño o propio).
-- El build del APK debe ser `--split-per-abi`: mezclar `--target-platform android-arm64` con `jniLibs` de dos ABIs produce un APK que crashea en x86_64 (`libflutter.so is for EM_AARCH64`).
+- `--split-per-abi` **no** se puede usar con `abiFilters` en `defaultConfig`: AGP aborta con «Conflicting configuration: 'arm64-v8a,x86_64' in ndk abiFilters cannot be present when splits abi filters are set». El build documentado es universal: `flutter build apk --release` (el `abiFilters` ya limita a arm64-v8a y x86_64). Tampoco usar `--target-platform android-arm64` con `jniLibs` de dos ABIs: ese APK crashea en x86_64 (`libflutter.so is for EM_AARCH64`).
+- Qué modelo carga la app: el `.gguf` modificado más recientemente en `files/models/`. Un `adb push` marca la hora actual y ese gana al siguiente arranque; con la carpeta vacía se copia el asset empaquetado. El arranque escribe `init: modelo=<nombre>` en `lain_startup.log`.
+- El emulador `lain` del AVD tiene 8 GB de `/data`: no alcanza para el APK (~1.6 GB) más la copia del GGUF (~1.5 GB). Para pruebas en emulador hace falta un AVD con `disk.dataPartition.size=16G` (se creó `lain16` en `~/.android/avd/`).
 - SQLite propio: `package:sqlite3` empaqueta SQLite con FTS5 (no el del sistema); el tokenizer `trigram` exige SQLite ≥ 3.34, por eso no se usa `sqflite`.
 - La memoria se guarda en `getApplicationSupportDirectory()/lain.db`; el historial del chat anterior (vía `sqflite`) no se migra.
 - Dataset local de 87 ejemplos: validar con `validate_dataset.py` antes de cada corrida.
@@ -59,9 +61,13 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - T14: memoria persistente local estilo Engram sobre `package:sqlite3` (FTS5 trigram): `observations`, `user_prompts`, `memory_relations`; deduplicación por hash, revisión por `topic_key`, recall inyectado en el system prompt y pantalla «Memoria». 44 pruebas en verde.
 - T1.9: historial persistido en SQLite (`lain.db`, tabla `messages`); `SqliteChatStore` con `loadRecent`/`saveTurn`/`clear`, restauración al abrir y botón de limpiar con confirmación. 4 pruebas con SQLite real (ffi) y 19 en total.
 - T1.7: `ThinkParser` separa el bloque `think` del texto visible (fragmentos partidos, bloques consecutivos, sin cierre) y la UI lo muestra en un panel colapsable; 6 pruebas del parser y 12 en total en verde.
+- Prueba de MiniCPM5-2B en CPU del PC (4 hilos, `n_gpu_layers=0`, mismos 5 prompts y 180 tokens): media 11.8 s/turno (~11.4 tok/s) frente a 16.0 s de Qwen2.5-3B (~8.2 tok/s), es decir ~26 % menos latencia; formato `<think>` 5/5 válido en ambos. El español es peor: se cuelan caracteres chinos («tamaño del `向量` de salida») y léxico inventado, pero el caso emocional («no sirvo para nada») lo trató mejor que Qwen.
+- App móvil con MiniCPM5-2B: asset empaquetado y copiado al primer arranque, carga y generación reales verificadas en emulador x86_64 (respuesta `<think>` JSON válido + texto visible). `locateModel()` elige el GGUF más reciente de `files/models/` y `modelFileName` pasó a `MiniCPM5-2B.Q4_K_M.gguf`; APK release universal de 1.59 GB. `flutter analyze` limpio y 48 pruebas en verde.
+- APK de release documentado como universal: el `--split-per-abi` del README chocaba con el `abiFilters` añadido el 2026-10-28.
 - Calidad del español mejoró frente a MiniCPM5-2B (frases completas, respuestas coherentes), pero siguen errores («Soyo soy es un modelo…», «los grupos más avances», corrección ortográfica equivocada en «Haber si mañana…») y una respuesta que valida el pensamiento negativo («No sirves para nada») en vez de acompañarlo → dataset a revisar en T11.7.
 
 ## Próximos pasos
+- Medir MiniCPM5-2B en el teléfono (T15.6/T1.8): instalar `mobile_app/build/app/outputs/flutter-apk/app-release.apk`, enviar 3 turnos y leer `ttft`/`total` en `lain_startup.log`; después `adb push` del Qwen y repetir para comparar.
 - T11.7: revisar el dataset (respuestas que validan pensamientos negativos, concordancia y ortografía) y medir de nuevo con `test/check_format.py` + `test/eval_es.py` tras corregirlo.
 - T9: portar la visión en dos pasos a la app (cámara, liberar VLM antes del LLM).
 - T9.7: pedir el caption del VLM en inglés (más preciso) y que Qwen lo traduzca; hoy arrastra «conductor's» y «un blusa».
