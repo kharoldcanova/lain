@@ -20,7 +20,7 @@ mobile_app/android/gradlew
 mobile_app/android/gradlew.bat
 mobile_app/android/local.properties
 mobile_app/android/key.properties
-mobile_app/android/app/src/main/jniLibs/
+mobile_app/android/app/src/*/jniLibs/
 *.jks
 *.keystore
 
