@@ -211,4 +211,88 @@ void main() {
     expect(find.textContaining('No hay modelos registrados'), findsOneWidget);
     expect(find.text('Importación cancelada'), findsOneWidget);
   });
+
+  testWidgets('eliminar un modelo suelto pide confirmación y lo borra',
+      (tester) async {
+    final manager = ModelManager(root);
+    final orphan = File('${root.path}/viejo.Q4_K_M.gguf')
+      ..writeAsStringSync('pesos');
+    await tester.runAsync(() async {
+      await tester.pumpWidget(app(manager));
+    });
+    await settleIo(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Modelos sueltos (adb push)'), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.tap(find.byTooltip('Eliminar modelo suelto'));
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+    });
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Eliminar'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pumpAndSettle();
+
+    expect(orphan.existsSync(), isFalse);
+    expect(find.text('Modelos sueltos (adb push)'), findsNothing);
+  });
+
+  testWidgets('borrar incompletas limpia el staging', (tester) async {
+    final manager = ModelManager(root);
+    final staging = Directory('${root.path}/.download-x')
+      ..createSync(recursive: true);
+    File('${staging.path}/modelo.gguf.part').writeAsStringSync('parcial');
+    await tester.runAsync(() async {
+      await tester.pumpWidget(app(manager));
+    });
+    await settleIo(tester);
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Borrar incompletas'));
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+    });
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Borrar'));
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+    });
+    await tester.pumpAndSettle();
+
+    expect(staging.existsSync(), isFalse);
+    expect(find.text('Instalaciones incompletas'), findsNothing);
+  });
+
+  testWidgets('borrar todo elimina los modelos y conserva lain.db',
+      (tester) async {
+    final manager = (await tester.runAsync(managerWithTwo))!;
+    final memory = File('${root.path}/lain.db')..writeAsStringSync('recuerdos');
+    await tester.runAsync(() async {
+      await tester.pumpWidget(app(manager));
+    });
+    await settleIo(tester);
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Borrar todo'));
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+    });
+    await tester.pumpAndSettle();
+    expect(find.textContaining('NO se tocan'), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.tap(find.text('Borrar todo').last);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    });
+    await tester.pumpAndSettle();
+    await settleIo(tester);
+    await tester.pumpAndSettle();
+
+    expect(await tester.runAsync(manager.inventory), isEmpty);
+    expect(memory.readAsStringSync(), 'recuerdos');
+    expect(find.textContaining('No hay modelos registrados'), findsOneWidget);
+  });
 }

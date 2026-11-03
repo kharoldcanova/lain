@@ -222,4 +222,102 @@ void main() {
       throwsA(isA<ModelManagerException>()),
     );
   });
+
+  test('usageBytes suma modelos, sueltos e incompletos', () async {
+    final manager = ModelManager(root);
+    await manager.importModel(
+      source: createSource('modelo-a.Q4_K_M.gguf', '12345'),
+    );
+    createFile('viejo.Q4_K_M.gguf', '123');
+    final partial = Directory('${root.path}/.importing-x')
+      ..createSync(recursive: true);
+    File('${partial.path}/model.gguf.part').writeAsStringSync('12');
+
+    var expected = 0;
+    for (final entity in root.listSync(recursive: true)) {
+      if (entity is File) expected += entity.lengthSync();
+    }
+
+    expect(await manager.usageBytes(), expected);
+    // Incluye el GGUF, el suelto, el .part y los manifiestos model.json.
+    expect(expected, greaterThan(5 + 3 + 2));
+  });
+
+  test('removeOrphan borra solo un GGUF suelto de la raíz', () async {
+    final manager = ModelManager(root);
+    final orphan = createFile('viejo.Q4_K_M.gguf', 'pesos');
+    final keep = createFile('notas.txt', 'no es modelo');
+    final nested = Directory('${root.path}/carpeta')..createSync(recursive: true);
+    final nestedGguf = File('${nested.path}/dentro.gguf')..writeAsStringSync('x');
+
+    await manager.removeOrphan(orphan);
+
+    expect(orphan.existsSync(), isFalse);
+    expect(keep.existsSync(), isTrue);
+    await expectLater(
+      manager.removeOrphan(nestedGguf),
+      throwsA(isA<ModelManagerException>()),
+    );
+    await expectLater(
+      manager.removeOrphan(keep),
+      throwsA(isA<ModelManagerException>()),
+    );
+    expect(nestedGguf.existsSync(), isTrue);
+  });
+
+  test('purgeIncomplete borra staging y .part, y conserva los registrados', () async {
+    final manager = ModelManager(root);
+    final model = await manager.importModel(
+      source: createSource('modelo-a.Q4_K_M.gguf', 'abcd'),
+    );
+    Directory('${root.path}/.importing-x').createSync(recursive: true);
+    Directory('${root.path}/.download-y').createSync(recursive: true);
+    final noManifest = Directory('${root.path}/sin-manifiesto')
+      ..createSync(recursive: true);
+    File('${noManifest.path}/algo.gguf').writeAsStringSync('123');
+    File('${root.path}/suelto.gguf.part').writeAsStringSync('12');
+
+    final freed = await manager.purgeIncomplete();
+
+    expect(freed, 3 + 2);
+    expect(Directory('${root.path}/.importing-x').existsSync(), isFalse);
+    expect(Directory('${root.path}/.download-y').existsSync(), isFalse);
+    expect(noManifest.existsSync(), isFalse);
+    expect(File('${root.path}/suelto.gguf.part').existsSync(), isFalse);
+    expect((await manager.inventory()).map((m) => m.id), [model.id]);
+  });
+
+  test('removeAllModels borra modelos y sueltos, y respeta los datos de LAIN',
+      () async {
+    final manager = ModelManager(root);
+    await manager.importModel(
+      source: createSource('modelo-a.Q4_K_M.gguf', 'abcd'),
+    );
+    await manager.setActiveModel('modelo-a.q4_k_m');
+    final orphan = createFile('viejo.Q4_K_M.gguf', '123');
+    final database = File('${root.path}/lain.db')..writeAsStringSync('recuerdos');
+    final notes = createFile('notas.txt', 'config');
+
+    final freed = await manager.removeAllModels();
+
+    expect(freed, greaterThan(0));
+    expect(await manager.inventory(), isEmpty);
+    expect(await manager.activeModelId(), isNull);
+    expect(orphan.existsSync(), isFalse);
+    expect(database.readAsStringSync(), 'recuerdos');
+    expect(notes.existsSync(), isTrue);
+  });
+
+  test('eliminar el modelo activo desactiva antes de borrar', () async {
+    final manager = ModelManager(root);
+    final model = await manager.importModel(
+      source: createSource('modelo-a.Q4_K_M.gguf', 'abcd'),
+    );
+    await manager.setActiveModel(model.id);
+
+    await manager.removeModel(model.id);
+
+    expect(await manager.activeModelId(), isNull);
+    expect(Directory('${root.path}/modelo-a.q4_k_m').existsSync(), isFalse);
+  });
 }

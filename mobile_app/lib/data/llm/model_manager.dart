@@ -29,6 +29,9 @@ class ModelManager {
   static const String activeFileName = 'active.json';
   static const String importStage = '.importing';
 
+  /// Prefijo de las descargas en curso (`models/.download-<id>/`).
+  static const String downloadStage = '.download';
+
   /// Abre el gestor sobre la carpeta de modelos de la app.
   static Future<ModelManager> open() async => ModelManager(await modelDirectory());
 
@@ -228,6 +231,9 @@ class ModelManager {
 
   /// Elimina SOLO la carpeta `models/<id>/`. No toca lain.db, recuerdos ni
   /// otros modelos. Lanza [ModelManagerException] si el id no está instalado.
+  ///
+  /// Si el modelo era el activo, primero lo desactiva (borra `active.json`):
+  /// la app nunca queda apuntando a un modelo inexistente.
   Future<void> removeModel(String id) async {
     final cleanId = ModelMetadata.sanitizeId(id);
     final dir = cleanId == null ? null : _dirFor(cleanId);
@@ -240,7 +246,132 @@ class ModelManager {
     if (target == root || !target.startsWith('$root${p.separator}')) {
       throw ModelManagerException('ruta de modelo inválida');
     }
+    if (await activeModelId() == cleanId) {
+      await clearActiveModel();
+    }
     await dir.delete(recursive: true);
+  }
+
+  /// Quita la selección de modelo activo (borra `active.json`).
+  Future<void> clearActiveModel() async {
+    final file = File(p.join(rootDir.path, activeFileName));
+    if (file.existsSync()) {
+      await file.delete();
+    }
+  }
+
+  /// Espacio ocupado por los modelos (registrados, sueltos e incompletos).
+  ///
+  /// Suma todos los archivos bajo `models/`. Es el dato que muestra la
+  /// pantalla «Modelos»; no incluye la base de datos ni otros datos de LAIN.
+  Future<int> usageBytes() async {
+    await _ensureRoot();
+    var total = 0;
+    try {
+      for (final entity in rootDir.listSync(recursive: true)) {
+        if (entity is File) {
+          try {
+            total += entity.lengthSync();
+          } on FileSystemException {
+            continue;
+          }
+        }
+      }
+    } on FileSystemException {
+      return total;
+    }
+    return total;
+  }
+
+  /// Elimina un GGUF suelto de la raíz (modelos instalados por `adb push`).
+  ///
+  /// Solo acepta archivos `.gguf` que estén directamente en `models/`.
+  Future<void> removeOrphan(File file) async {
+    await _ensureRoot();
+    final root = p.canonicalize(rootDir.path);
+    final target = p.canonicalize(file.path);
+    final isDirectChild = p.dirname(target) == root;
+    if (!isDirectChild || !target.toLowerCase().endsWith('.gguf')) {
+      throw ModelManagerException('ruta de modelo inválida');
+    }
+    if (!file.existsSync()) {
+      throw ModelManagerException('el archivo ya no existe');
+    }
+    await file.delete();
+  }
+
+  /// Borra instalaciones incompletas (`.importing-*`, `.download-*`, carpetas
+  /// sin `model.json` y archivos `.part`). Devuelve los bytes liberados.
+  ///
+  /// Nunca toca modelos registrados ni archivos ajenos a la carpeta.
+  Future<int> purgeIncomplete() async {
+    await _ensureRoot();
+    var freed = 0;
+    for (final entity in rootDir.listSync()) {
+      final name = p.basename(entity.path);
+      if (entity is Directory) {
+        final manifest = File(p.join(entity.path, manifestFileName));
+        final isStaging = name.startsWith(importStage) ||
+            name.startsWith(downloadStage);
+        if (isStaging || !manifest.existsSync()) {
+          freed += await _directoryBytes(entity);
+          await entity.delete(recursive: true);
+        }
+        continue;
+      }
+      if (entity is File && entity.path.endsWith('.part')) {
+        freed += await _fileBytes(entity);
+        await entity.delete();
+      }
+    }
+    return freed;
+  }
+
+  /// Borra TODO el almacenamiento de modelos: carpetas registradas, GGUF
+  /// sueltos, staging y `active.json`. Devuelve los bytes liberados.
+  ///
+  /// Las conversaciones, los recuerdos, la configuración y `lain.db` viven
+  /// fuera de esta carpeta y no se tocan.
+  Future<int> removeAllModels() async {
+    await _ensureRoot();
+    var freed = 0;
+    for (final entity in rootDir.listSync()) {
+      final name = p.basename(entity.path);
+      if (entity is Directory) {
+        freed += await _directoryBytes(entity);
+        await entity.delete(recursive: true);
+        continue;
+      }
+      if (entity is! File) continue;
+      final lower = name.toLowerCase();
+      final removable = lower.endsWith('.gguf') ||
+          lower.endsWith('.part') ||
+          name == activeFileName;
+      if (!removable) continue;
+      freed += await _fileBytes(entity);
+      await entity.delete();
+    }
+    return freed;
+  }
+
+  Future<int> _directoryBytes(Directory dir) async {
+    var total = 0;
+    try {
+      for (final entity in dir.listSync(recursive: true)) {
+        if (entity is File) total += await _fileBytes(entity);
+      }
+    } on FileSystemException {
+      return total;
+    }
+    return total;
+  }
+
+  Future<int> _fileBytes(File file) async {
+    try {
+      return await file.length();
+    } on FileSystemException {
+      return 0;
+    }
   }
 
   Future<void> _ensureRoot() async {

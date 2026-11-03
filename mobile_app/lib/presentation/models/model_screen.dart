@@ -61,6 +61,7 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
   List<String> _incomplete = <String>[];
   String? _activeId;
   int? _freeBytes;
+  int _usedBytes = 0;
   bool _loading = true;
 
   @override
@@ -81,6 +82,7 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
         manager.incompleteInstallations(),
         manager.activeModelId(),
         installer.freeBytes().catchError((Object _) => 0),
+        manager.usageBytes(),
       ]);
       if (!mounted) return;
       setState(() {
@@ -89,6 +91,7 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
         _incomplete = results[2] as List<String>;
         _activeId = results[3] as String?;
         _freeBytes = results[4] as int?;
+        _usedBytes = results[5] as int;
         _loading = false;
       });
     } on Object catch (error) {
@@ -141,6 +144,110 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
       if (wasActive) {
         await ref.read(chatControllerProvider.notifier).retry();
       }
+    } on Object catch (error) {
+      if (mounted) _snack('$error');
+    }
+  }
+
+  Future<void> _confirmDeleteOrphan(File file) async {
+    final name = file.uri.pathSegments.last;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('¿Eliminar $name?'),
+        content: const Text(
+          'Se borra este archivo de la carpeta de modelos. '
+          'Las conversaciones, los recuerdos y la configuración no se tocan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final manager = await _manager();
+    try {
+      await manager.removeOrphan(file);
+      await _refresh();
+      await ref.read(chatControllerProvider.notifier).retry();
+    } on Object catch (error) {
+      if (mounted) _snack('$error');
+    }
+  }
+
+  Future<void> _confirmPurgeIncomplete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Borrar las instalaciones incompletas?'),
+        content: const Text(
+          'Se eliminan las descargas e importaciones interrumpidas que no se '
+          'pueden usar. Los modelos registrados no se tocan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Borrar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final manager = await _manager();
+    try {
+      final freed = await manager.purgeIncomplete();
+      await _refresh();
+      if (mounted) _snack('Espacio liberado: ${_size(freed)}');
+    } on Object catch (error) {
+      if (mounted) _snack('$error');
+    }
+  }
+
+  Future<void> _confirmRemoveAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Borrar todos los modelos?'),
+        content: Text(
+          'Se borran ${_models.length} modelos descargados y los archivos '
+          'sueltos de la carpeta de modelos: ${_size(_usedBytes)}.\n\n'
+          'Las conversaciones, los recuerdos y la configuración NO se tocan. '
+          'Después vas a tener que descargar o importar un modelo para '
+          'volver a conversar.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Borrar todo'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final manager = await _manager();
+    try {
+      final freed = await manager.removeAllModels();
+      await _refresh();
+      await ref.read(chatControllerProvider.notifier).retry();
+      if (mounted) _snack('Espacio liberado: ${_size(freed)}');
     } on Object catch (error) {
       if (mounted) _snack('$error');
     }
@@ -303,12 +410,28 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
                         leading: const Icon(Icons.folder_outlined),
                         title: Text(file.uri.pathSegments.last),
                         subtitle: const Text('Se usa como fallback si no hay modelo activo.'),
+                        trailing: IconButton(
+                          onPressed: () => _confirmDeleteOrphan(file),
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Eliminar modelo suelto',
+                        ),
                       ),
                     ),
                   ],
                   if (_incomplete.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    Text('Instalaciones incompletas', style: theme.textTheme.titleSmall),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Instalaciones incompletas',
+                              style: theme.textTheme.titleSmall),
+                        ),
+                        TextButton(
+                          onPressed: _confirmPurgeIncomplete,
+                          child: const Text('Borrar incompletas'),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 4),
                     for (final name in _incomplete)
                       ListTile(
@@ -327,6 +450,7 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
 
   Widget _storageCard(ThemeData theme) {
     final free = _freeBytes;
+    final freeLabel = free == null ? 'desconocido' : '${_gigabytes(free)} GB';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -339,15 +463,31 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
           Text('Almacenamiento', style: theme.textTheme.bodyMedium),
           const SizedBox(height: 4),
           Text(
-            free == null ? 'Espacio libre: desconocido' : 'Espacio libre: ${_gigabytes(free)} GB',
+            'Modelos: ${_size(_usedBytes)} · Libre: $freeLabel',
             style: theme.textTheme.bodySmall,
           ),
+          if (_usedBytes > 0)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _confirmRemoveAll,
+                icon: const Icon(Icons.delete_sweep_outlined),
+                label: const Text('Borrar todo'),
+              ),
+            ),
         ],
       ),
     );
   }
 
   String _gigabytes(int bytes) => (bytes / (1024 * 1024 * 1024)).toStringAsFixed(1);
+
+  String _size(int bytes) {
+    final mib = bytes / (1024 * 1024);
+    if (mib >= 1024) return '${(mib / 1024).toStringAsFixed(2)} GiB';
+    if (mib >= 1) return '${mib.toStringAsFixed(0)} MiB';
+    return '$bytes B';
+  }
 }
 
 class _ModelTile extends StatelessWidget {

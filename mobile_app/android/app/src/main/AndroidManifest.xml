@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Descarga de modelos GGUF desde Hugging Face (pantalla «Modelos»). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
         android:label="lain_mobile"
         android:name="${applicationName}"
