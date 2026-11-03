@@ -27,11 +27,29 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
 
-        // Solo ABIs con las .so de llama.cpp compiladas (jniLibs/). Sin este
-        // filtro, --split-per-abi genera un APK armeabi-v7a sin liblain_llm.so.
-        ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+    // Dos motores, dos APK instalables en paralelo:
+    //  - prod: bibliotecas originales (CPU estático) en src/prod/jniLibs.
+    //  - experimental: 7 variantes GGML + puente DL en src/experimental/jniLibs
+    //    y solo arm64-v8a.
+    flavorDimensions += "engine"
+    productFlavors {
+        create("prod") {
+            dimension = "engine"
+            // Solo ABIs con las .so compiladas. Sin este filtro, --split-per-abi
+            // genera un APK armeabi-v7a sin liblain_llm.so.
+            ndk {
+                abiFilters += listOf("arm64-v8a", "x86_64")
+            }
+        }
+        create("experimental") {
+            dimension = "engine"
+            applicationIdSuffix = ".exp"
+            versionNameSuffix = "-exp"
+            ndk {
+                abiFilters += listOf("arm64-v8a")
+            }
         }
     }
 
@@ -63,4 +81,15 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+// El experimental es exclusivamente arm64-v8a. `--target-platform android-arm64`
+// quita las libs de Flutter de otras ABIs, pero dependencias como `jni` siguen
+// aportando libdartjni.so para armv7/x86: se excluyen del empaquetado.
+androidComponents {
+    onVariants(selector().withFlavor("engine" to "experimental")) { variant ->
+        variant.packaging.jniLibs.excludes.addAll(
+            listOf("lib/armeabi-v7a/**", "lib/x86_64/**"),
+        )
+    }
 }

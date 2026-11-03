@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/experimental.dart';
 import '../../core/theme.dart';
 import '../../data/diagnostics/startup_log.dart';
 import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
+import '../diagnostics/diagnostics_screen.dart';
 import '../memory/memory_screen.dart';
 import '../models/model_screen.dart';
 import 'chat_controller.dart';
@@ -75,6 +77,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               ),
+            ),
+          if (ref.watch(experimentalModeProvider))
+            IconButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const DiagnosticsScreen(),
+                ),
+              ),
+              icon: const Icon(Icons.monitor_heart_outlined),
+              tooltip: 'Diagnóstico',
             ),
           IconButton(
             onPressed: () => _showStartupLog(context),

@@ -12,6 +12,7 @@ import 'package:lain_mobile/data/llm/model_store.dart';
 import 'package:lain_mobile/data/diagnostics/startup_log.dart';
 import 'package:lain_mobile/data/storage/chat_store.dart';
 import 'package:lain_mobile/data/storage/lain_database.dart';
+import 'package:lain_mobile/core/experimental.dart';
 import 'package:lain_mobile/data/storage/memory_store.dart';
 import 'package:lain_mobile/domain/chat/chat_message.dart';
 import 'package:lain_mobile/domain/chat/chat_state.dart';
@@ -140,6 +141,7 @@ Widget _app({
   ModelInstaller? installer,
   FakeChatStore? store,
   MemoryStore? memory,
+  bool? experimental,
 }) {
   return ProviderScope(
     overrides: [
@@ -157,6 +159,8 @@ Widget _app({
             ),
       ),
       systemPromptProvider.overrideWith((ref) async => 'Eres LAIN.'),
+      if (experimental != null)
+        experimentalModeProvider.overrideWithValue(experimental),
     ],
     child: const LainApp(),
   );
@@ -171,6 +175,22 @@ void main() {
 
     expect(find.text('Estoy aquí.'), findsOneWidget);
     expect(find.text('Escribe un mensaje…'), findsOneWidget);
+  });
+
+  testWidgets('sin flavor experimental no muestra la pantalla de diagnóstico',
+      (tester) async {
+    await tester.pumpWidget(_app(experimental: false));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Diagnóstico'), findsNothing);
+  });
+
+  testWidgets('con flavor experimental muestra el acceso a diagnóstico',
+      (tester) async {
+    await tester.pumpWidget(_app(experimental: true));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Diagnóstico'), findsOneWidget);
   });
 
   testWidgets('abre el registro de arranque desde la AppBar', (tester) async {
