@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme.dart';
+import '../../data/llm/engine_capabilities.dart';
 import '../../data/llm/model_installer.dart';
 import '../../data/llm/model_manager.dart';
 import '../../data/llm/model_metadata.dart';
@@ -506,6 +507,7 @@ class _ModelTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final supported = isArchitectureSupported(model.architecture);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
@@ -514,14 +516,29 @@ class _ModelTile extends StatelessWidget {
           color: active ? LainColors.primary : LainColors.textMuted,
         ),
         title: Text(model.name),
-        subtitle: Text(
-          '${model.quantization} · ${_size(model.sizeBytes)} · ${model.family}',
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${model.quantization} · ${_size(model.sizeBytes)} · ${model.architecture}',
+            ),
+            if (!supported)
+              Text(
+                'Requiere una versión nueva del motor',
+                style: theme.textTheme.bodySmall?.copyWith(color: LainColors.textMuted),
+              ),
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!active)
+            if (!active && supported)
               TextButton(onPressed: onActivate, child: const Text('Usar')),
+            if (!active && !supported)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Icon(Icons.block, color: LainColors.textMuted, size: 20),
+              ),
             if (active)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),

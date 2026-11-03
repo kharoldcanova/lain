@@ -9,6 +9,8 @@ import 'package:lain_mobile/domain/chat/chat_state.dart';
 import 'package:lain_mobile/presentation/chat/chat_controller.dart';
 import 'package:lain_mobile/presentation/models/model_screen.dart';
 
+import 'support/gguf_fixture.dart';
+
 /// Controlador de chat inerte: la pantalla de modelos solo lo usa para
 /// recargar el motor tras activar/importar/eliminar.
 class _FakeChatController extends ChatController {
@@ -267,8 +269,7 @@ void main() {
   });
 
   testWidgets('borrar todo elimina los modelos y conserva lain.db',
-      (tester) async {
-    final manager = (await tester.runAsync(managerWithTwo))!;
+      (tester) async {    final manager = (await tester.runAsync(managerWithTwo))!;
     final memory = File('${root.path}/lain.db')..writeAsStringSync('recuerdos');
     await tester.runAsync(() async {
       await tester.pumpWidget(app(manager));
@@ -294,5 +295,25 @@ void main() {
     expect(await tester.runAsync(manager.inventory), isEmpty);
     expect(memory.readAsStringSync(), 'recuerdos');
     expect(find.textContaining('No hay modelos registrados'), findsOneWidget);
+  });
+
+  testWidgets('un modelo de arquitectura no soportada no se puede activar',
+      (tester) async {
+    final manager = ModelManager(root);
+    await tester.runAsync(() async {
+      await manager.importModel(
+        source: File('${sources.path}/LFM3-1.7B-Q4_K_M.gguf')
+          ..writeAsBytesSync(buildGguf(architecture: 'lfm3')),
+      );
+    });
+    await tester.runAsync(() async {
+      await tester.pumpWidget(app(manager));
+    });
+    await settleIo(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Requiere una versión nueva del motor'), findsOneWidget);
+    expect(find.text('Usar'), findsNothing);
+    expect(find.textContaining('lfm3'), findsWidgets);
   });
 }

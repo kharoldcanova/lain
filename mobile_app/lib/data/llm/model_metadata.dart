@@ -19,6 +19,7 @@ class ModelMetadata {
     required this.engineCompat,
     required this.fileName,
     required this.addedAt,
+    this.sourceUrl,
   });
 
   /// Identificador único (nombre saneado del archivo, sin extensión).
@@ -57,6 +58,10 @@ class ModelMetadata {
   /// Fecha de registro en ISO-8601.
   final String addedAt;
 
+  /// Origen del archivo (URL de Hugging Face cuando se descargó), o `null`
+  /// si se importó desde el dispositivo.
+  final String? sourceUrl;
+
   /// Ruta absoluta esperada del archivo del modelo.
   String filePath(String rootPath) => p.join(rootPath, id, fileName);
 
@@ -73,6 +78,7 @@ class ModelMetadata {
         'engineCompat': engineCompat,
         'fileName': fileName,
         'addedAt': addedAt,
+        if (sourceUrl != null) 'sourceUrl': sourceUrl,
       };
 
   factory ModelMetadata.fromJson(Map<String, Object?> json) => ModelMetadata(
@@ -88,6 +94,7 @@ class ModelMetadata {
         engineCompat: json['engineCompat'] as String? ?? 'llama-cpp',
         fileName: json['fileName'] as String,
         addedAt: json['addedAt'] as String? ?? '',
+        sourceUrl: json['sourceUrl'] as String?,
       );
 
   /// Cuantización detectada en un nombre de archivo (`Q4_K_M`, `Q5_0`, …).

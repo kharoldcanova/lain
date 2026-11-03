@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 import 'model_manager.dart';
+import 'engine_capabilities.dart';
 
 class ModelLocation {
   const ModelLocation({required this.expectedPath, this.file});
@@ -62,7 +63,7 @@ Future<ModelLocation> locateModelIn(Directory dir) async {
   final manager = ModelManager(dir);
 
   final active = await manager.activeModel();
-  if (active != null) {
+  if (active != null && isArchitectureSupported(active.architecture)) {
     final file = File(active.filePath(dir.path));
     if (file.existsSync()) {
       return ModelLocation(expectedPath: file.path, file: file);
@@ -76,6 +77,7 @@ Future<ModelLocation> locateModelIn(Directory dir) async {
 
   final registered = await manager.inventory();
   for (final metadata in registered) {
+    if (!isArchitectureSupported(metadata.architecture)) continue;
     final file = File(metadata.filePath(dir.path));
     if (file.existsSync()) {
       return ModelLocation(expectedPath: file.path, file: file);

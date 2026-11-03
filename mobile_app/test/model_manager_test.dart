@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lain_mobile/data/llm/model_manager.dart';
 import 'package:lain_mobile/data/llm/model_metadata.dart';
 
+import 'support/gguf_fixture.dart';
+
 void main() {
   late Directory root;
   late Directory sources;
@@ -319,5 +321,67 @@ void main() {
 
     expect(await manager.activeModelId(), isNull);
     expect(Directory('${root.path}/modelo-a.q4_k_m').existsSync(), isFalse);
+  });
+
+  test('la importación detecta la arquitectura GGUF', () async {
+    final manager = ModelManager(root);
+    final source = File('${sources.path}/lfm2-1.2b.Q4_K_M.gguf')
+      ..writeAsBytesSync(buildGguf(architecture: 'lfm2'));
+
+    final metadata = await manager.importModel(source: source);
+
+    expect(metadata.architecture, 'lfm2');
+    final reread = (await manager.inventory()).single;
+    expect(reread.architecture, 'lfm2');
+  });
+
+  test('un archivo que no es GGUF se importa como arquitectura desconocida',
+      () async {
+    final manager = ModelManager(root);
+    final source = createSource('raro.Q4_K_M.gguf', 'no es gguf');
+
+    final metadata = await manager.importModel(source: source);
+
+    expect(metadata.architecture, 'desconocida');
+    await manager.setActiveModel(metadata.id);
+    expect(await manager.activeModelId(), metadata.id);
+  });
+
+  test('bloquea activar un modelo con arquitectura no soportada', () async {
+    final manager = ModelManager(root);
+    final source = File('${sources.path}/LFM3-1.7B-Q4_K_M.gguf')
+      ..writeAsBytesSync(buildGguf(architecture: 'lfm3'));
+    final metadata = await manager.importModel(source: source);
+
+    await expectLater(
+      manager.setActiveModel(metadata.id),
+      throwsA(
+        isA<ModelManagerException>().having(
+          (error) => error.message,
+          'message',
+          allOf(contains('lfm3'), contains('motor')),
+        ),
+      ),
+    );
+    expect(await manager.activeModelId(), isNull);
+  });
+
+  test('conserva la URL de origen en los metadatos', () async {
+    final manager = ModelManager(root);
+    final source = createSource('modelo.Q4_K_M.gguf', 'pesos');
+
+    final metadata = await manager.importModel(
+      source: source,
+      sourceUrl: 'https://huggingface.co/org/repo/resolve/main/modelo.gguf',
+    );
+
+    expect(
+      metadata.sourceUrl,
+      'https://huggingface.co/org/repo/resolve/main/modelo.gguf',
+    );
+    expect(
+      (await manager.inventory()).single.sourceUrl,
+      contains('huggingface.co'),
+    );
   });
 }

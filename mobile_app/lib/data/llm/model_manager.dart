@@ -6,6 +6,8 @@ import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
 import 'model_metadata.dart';
+import 'engine_capabilities.dart';
+import 'gguf_header.dart';
 import 'model_store.dart';
 
 /// Gestor de modelos independiente del modelo concreto.
@@ -132,15 +134,38 @@ class ModelManager {
     return null;
   }
 
-  /// Marca el modelo activo. Lanza [ModelManagerException] si no existe.
+  /// Marca el modelo activo. Lanza [ModelManagerException] si no existe o si
+  /// el motor incluido en la app no soporta su arquitectura.
   Future<void> setActiveModel(String id) async {
     final models = await inventory();
-    if (!models.any((model) => model.id == id)) {
+    ModelMetadata? model;
+    for (final candidate in models) {
+      if (candidate.id == id) model = candidate;
+    }
+    if (model == null) {
       throw ModelManagerException('no hay ningún modelo instalado con el id "$id"');
     }
+    _ensureEngineSupports(model);
     await _ensureRoot();
     final file = File(p.join(rootDir.path, activeFileName));
     await file.writeAsString(jsonEncode(<String, Object?>{'id': id}), flush: true);
+  }
+
+  /// Rechaza activar un modelo cuya arquitectura GGUF no soporta el motor.
+  static void _ensureEngineSupports(ModelMetadata model) {
+    if (isArchitectureSupported(model.architecture)) return;
+    final arch = model.architecture;
+    if (knownUnsupportedArchitectures.contains(arch)) {
+      throw ModelManagerException(
+        'este modelo usa la arquitectura "$arch", que el motor incluido en '
+        'esta app todavía no soporta.\n\nRequiere una versión de LAIN con el '
+        'motor actualizado (llama.cpp compilado con soporte para $arch).',
+      );
+    }
+    throw ModelManagerException(
+      'este modelo usa la arquitectura "$arch", que el motor incluido en '
+      'esta app no reconoce. Probá con otro modelo o actualizá LAIN.',
+    );
   }
 
   /// Importa un GGUF desde [source] a `models/<id>/` de forma atómica.
@@ -157,6 +182,7 @@ class ModelManager {
     String family = 'language',
     String? version,
     String? architecture,
+    String? sourceUrl,
     Future<int> Function()? freeBytes,
     void Function(double progress)? onProgress,
   }) async {
@@ -170,6 +196,13 @@ class ModelManager {
     final size = await source.length();
     if (size <= 0) {
       throw ModelManagerException('el archivo está vacío o es ilegible');
+    }
+    String? probedArchitecture;
+    try {
+      probedArchitecture = (await readGgufInfo(source)).architecture;
+    } on GgufHeaderException {
+      // Best-effort: si la cabecera no se puede leer, el modelo se importa
+      // igual; la falta de arquitectura no bloquea la activación.
     }
     final id = ModelMetadata.sanitizeId(p.basenameWithoutExtension(source.path));
     if (id == null) {
@@ -208,7 +241,7 @@ class ModelManager {
         id: id,
         name: p.basenameWithoutExtension(source.path),
         version: version ?? 'desconocida',
-        architecture: architecture ?? 'desconocida',
+        architecture: architecture ?? probedArchitecture ?? 'desconocida',
         format: 'gguf',
         quantization: ModelMetadata.quantizationFromName(source.path),
         family: family,
@@ -217,6 +250,7 @@ class ModelManager {
         engineCompat: 'llama-cpp',
         fileName: finalName,
         addedAt: DateTime.now().toUtc().toIso8601String(),
+        sourceUrl: sourceUrl,
       );
       final manifest = File(p.join(staging.path, manifestFileName));
       await manifest.writeAsString(jsonEncode(metadata.toJson()), flush: true);

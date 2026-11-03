@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lain_mobile/data/llm/model_manager.dart';
 import 'package:lain_mobile/data/llm/model_store.dart';
 
+import 'support/gguf_fixture.dart';
+
 void main() {
   late Directory dir;
   late Directory sources;
@@ -101,5 +103,22 @@ void main() {
     final location = await locateModelIn(dir);
 
     expect(location.file?.path, legacy.path);
+  });
+
+  test('locateModelIn ignora un modelo activo con arquitectura no soportada',
+      () async {
+    final manager = ModelManager(dir);
+    final source = File('${sources.path}/LFM3-1.7B-Q4_K_M.gguf')
+      ..writeAsBytesSync(buildGguf(architecture: 'lfm3'));
+    final unsupported = await manager.importModel(source: source);
+    // active.json inconsistente: escrito antes de la sonda de arquitectura.
+    File('${dir.path}/active.json')
+        .writeAsStringSync('{"id":"${unsupported.id}"}');
+    final legacy = crear('MiniCPM5-2B.Q4_K_M.gguf', DateTime(2026, 10, 29, 20));
+
+    final location = await locateModelIn(dir);
+
+    expect(location.file?.path, legacy.path);
+    expect(location.file?.path, isNot(contains('LFM3')));
   });
 }
