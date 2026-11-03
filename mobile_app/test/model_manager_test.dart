@@ -384,4 +384,82 @@ void main() {
       contains('huggingface.co'),
     );
   });
+
+  test('registra una descarga por renombrado, sin duplicar el archivo',
+      () async {
+    final manager = ModelManager(root);
+    final bytes = buildGguf(architecture: 'lfm2');
+    final staging = Directory('${root.path}/.download-modelo-q4_k_m')
+      ..createSync(recursive: true);
+    final file = File('${staging.path}/modelo-Q4_K_M.gguf')
+      ..writeAsBytesSync(bytes);
+
+    final metadata = await manager.registerDownloaded(
+      staging: staging,
+      file: file,
+      sha256: sha256.convert(bytes).toString(),
+      sourceUrl:
+          'https://huggingface.co/org/repo/resolve/main/modelo-Q4_K_M.gguf',
+    );
+
+    expect(metadata.id, 'modelo-q4_k_m');
+    expect(metadata.architecture, 'lfm2');
+    expect(metadata.quantization, 'Q4_K_M');
+    // La carpeta de descarga se movió: no hay dos copias en disco.
+    expect(staging.existsSync(), isFalse);
+    final installed = File('${root.path}/modelo-q4_k_m/modelo-Q4_K_M.gguf');
+    expect(installed.existsSync(), isTrue);
+    expect(installed.readAsBytesSync(), bytes);
+    expect(
+      (await manager.inventory()).single.sourceUrl,
+      contains('huggingface.co'),
+    );
+  });
+
+  test('registerDownloaded rechaza staging fuera de la carpeta de modelos',
+      () async {
+    final manager = ModelManager(root);
+    final outside = Directory('${sources.path}/.download-x')..createSync();
+    final file = File('${outside.path}/modelo.Q4_K_M.gguf')
+      ..writeAsStringSync('pesos');
+
+    await expectLater(
+      manager.registerDownloaded(
+        staging: outside,
+        file: file,
+        sha256: 'a' * 64,
+      ),
+      throwsA(isA<ModelManagerException>().having(
+        (error) => error.message,
+        'message',
+        contains('descarga'),
+      )),
+    );
+  });
+
+  test('registerDownloaded rechaza un id ya instalado', () async {
+    final manager = ModelManager(root);
+    Future<void> registerIn(String stagingName) async {
+      final staging = Directory('${root.path}/$stagingName')
+        ..createSync(recursive: true);
+      final file = File('${staging.path}/modelo-Q4_K_M.gguf')
+        ..writeAsBytesSync(buildGguf(architecture: 'lfm2'));
+      await manager.registerDownloaded(
+        staging: staging,
+        file: file,
+        sha256: sha256.convert(file.readAsBytesSync()).toString(),
+      );
+    }
+
+    await registerIn('.download-modelo-q4_k_m');
+
+    await expectLater(
+      registerIn('.download-modelo-q4_k_m-2'),
+      throwsA(isA<ModelManagerException>().having(
+        (error) => error.message,
+        'message',
+        contains('ya existe'),
+      )),
+    );
+  });
 }

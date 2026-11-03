@@ -243,7 +243,7 @@ class ModelManager {
         version: version ?? 'desconocida',
         architecture: architecture ?? probedArchitecture ?? 'desconocida',
         format: 'gguf',
-        quantization: ModelMetadata.quantizationFromName(source.path),
+        quantization: ModelMetadata.quantizationFromName(p.basename(source.path)),
         family: family,
         sizeBytes: size,
         sha256: sha256sum.toLowerCase(),
@@ -261,6 +261,84 @@ class ModelManager {
       await staging.delete(recursive: true).catchError((_) => staging);
       rethrow;
     }
+  }
+
+  /// Registra un archivo ya descargado en `models/<id>/` **sin copiarlo**.
+  ///
+  /// [staging] debe ser una carpeta `.download-<id>` creada por
+  /// `ModelDownloader`; se renombra tal cual (operación atómica), así que un
+  /// modelo de 1 GB no ocupa el doble de espacio ni se vuelve a escribir.
+  /// Si el renombrado falla, se lanza [ModelManagerException] y la carpeta
+  /// queda intacta para reintentar.
+  Future<ModelMetadata> registerDownloaded({
+    required Directory staging,
+    required File file,
+    required String sha256,
+    String? sourceUrl,
+    String family = 'language',
+    String? version,
+  }) async {
+    await _ensureRoot();
+    final root = p.canonicalize(rootDir.path);
+    final stagingPath = p.canonicalize(staging.path);
+    final stagingName = p.basename(stagingPath);
+    if (p.dirname(stagingPath) != root ||
+        !stagingName.startsWith('$downloadStage-')) {
+      throw ModelManagerException('la carpeta de descarga no es válida');
+    }
+    if (!await file.exists()) {
+      throw ModelManagerException('el archivo descargado no existe');
+    }
+    if (!file.path.toLowerCase().endsWith('.gguf')) {
+      throw ModelManagerException('formato no soportado: se espera un archivo .gguf');
+    }
+    final size = await file.length();
+    if (size <= 0) {
+      throw ModelManagerException('el archivo descargado está vacío');
+    }
+    final id = ModelMetadata.sanitizeId(p.basenameWithoutExtension(file.path));
+    if (id == null) {
+      throw ModelManagerException('el nombre del archivo no permite generar un id válido');
+    }
+    if (_dirFor(id).existsSync()) {
+      throw ModelManagerException('ya existe un modelo con el id "$id"');
+    }
+    if (sha256.trim().isEmpty) {
+      throw ModelManagerException('falta el SHA-256 del archivo descargado');
+    }
+
+    String architecture = 'desconocida';
+    try {
+      architecture = (await readGgufInfo(file)).architecture;
+    } on GgufHeaderException {
+      // Igual que en la importación: sin arquitectura el modelo se registra.
+    }
+
+    final metadata = ModelMetadata(
+      id: id,
+      name: p.basenameWithoutExtension(file.path),
+      version: version ?? 'desconocida',
+      architecture: architecture,
+      format: 'gguf',
+      quantization: ModelMetadata.quantizationFromName(p.basename(file.path)),
+      family: family,
+      sizeBytes: size,
+      sha256: sha256.toLowerCase(),
+      engineCompat: 'llama-cpp',
+      fileName: p.basename(file.path),
+      addedAt: DateTime.now().toUtc().toIso8601String(),
+      sourceUrl: sourceUrl,
+    );
+    final manifest = File(p.join(staging.path, manifestFileName));
+    await manifest.writeAsString(jsonEncode(metadata.toJson()), flush: true);
+    try {
+      await staging.rename(_dirFor(id).path);
+    } on FileSystemException catch (error) {
+      throw ModelManagerException(
+        'no se pudo mover el modelo descargado a su carpeta: ${error.message}',
+      );
+    }
+    return metadata;
   }
 
   /// Elimina SOLO la carpeta `models/<id>/`. No toca lain.db, recuerdos ni

@@ -25,12 +25,19 @@ class HfUrlPolicy {
   final bool requireHttps;
 
   /// `true` si [uri] usa un esquema y un host permitidos.
+  ///
+  /// Se acepta el host exacto y sus subdominios (Hugging Face sirve los
+  /// archivos desde CDN propios como `cdn-lfs.huggingface.co` o
+  /// `cas-bridge.xethub.hf.co`, cuyos nombres no se pueden fijar de antemano).
+  /// `huggingface.co.evil.com` no es subdominio y se rechaza.
   bool allows(Uri uri) {
     final scheme = uri.scheme.toLowerCase();
     if (requireHttps && scheme != 'https') return false;
     if (!requireHttps && scheme != 'https' && scheme != 'http') return false;
-    if (uri.host.isEmpty) return false;
-    return allowedHosts.contains(uri.host.toLowerCase());
+    final host = uri.host.toLowerCase();
+    if (host.isEmpty) return false;
+    if (allowedHosts.contains(host)) return true;
+    return allowedHosts.any((allowed) => host.endsWith('.$allowed'));
   }
 }
 
