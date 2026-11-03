@@ -48,7 +48,7 @@ void main() {
           {
             'rfilename': 'modelo-Q4_K_M.gguf',
             'size': 700,
-            'lfs': {'oid': 'a' * 64, 'size': 700},
+            'lfs': {'sha256': 'a' * 64, 'size': 700},
           },
           {'rfilename': 'modelo-Q8_0.gguf', 'size': 900},
         ],

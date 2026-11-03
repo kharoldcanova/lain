@@ -3,6 +3,25 @@
 ## [Unreleased]
 
 ### Added
+- `mobile_app/lib/data/llm/model_catalog.dart`: catálogo curado (LFM2.5-1.2B/2.6B, LFM3-1.7B, Qwen3-1.7B, Qwen2.5-3B) con arquitectura, idiomas, tamaño orientativo y nota de compatibilidad.
+- `mobile_app/lib/presentation/models/model_catalog_screen.dart`: pantalla «Descargar modelos» con progreso, cancelación, descarga por URL, instalación/activación y borrado.
+- `mobile_app/lib/presentation/models/hf_url_dialog.dart`: importación por URL de Hugging Face con validación y elección de archivo.
+- `mobile_app/lib/data/llm/hf_url.dart` + `hf_client.dart`: parser HTTPS de `huggingface.co`/`hf.co` (repos y `.gguf`) y cliente de la API con tamaño y SHA-256 de LFS; errores de red/gating/404 en español.
+- `mobile_app/lib/data/llm/model_downloader.dart`: descarga a `models/.download-<id>/` con `.part` reanudable (`Range`), cancelación que conserva el parcial, SHA-256 en el mismo pase, espacio verificado y validación de cada redirección.
+- `mobile_app/lib/data/llm/gguf_header.dart` + `engine_capabilities.dart`: sonda de `general.architecture` del GGUF y capacidades verificadas del motor incluido (`caa8191`: `lfm2` sí, `lfm3` no).
+- `ModelManager.registerDownloaded/removeOrphan/purgeIncomplete/removeAllModels/usageBytes/clearActiveModel` y `ModelMetadata.sourceUrl`.
+- Pruebas: `gguf_header_test`, `engine_capabilities_test`, `hf_url_test`, `hf_client_test`, `model_downloader_test`, `model_catalog_test`, `model_catalog_screen_test` (descarga, reanudación, cancelación, hash, redirecciones, borrado).
+
+### Changed
+- **El APK release declara `INTERNET`**: antes solo estaba en `debug`/`profile`, así que la descarga era imposible en release.
+- `ModelManager.importModel` detecta la arquitectura GGUF real y corrige la cuantización leída desde la ruta completa (`Q4_K` → `Q4_K_M`); `setActiveModel` y `locateModel` rechazan/ignoran arquitecturas no soportadas.
+- Eliminar un modelo lo desactiva primero (`active.json`), incluso si era el activo.
+- Pantalla «Modelos»: espacio usado/libre, borrado de GGUF sueltos e instalaciones incompletas y «Borrar todo» con confirmación.
+- `chat_controller.dart` y el estado vacío de «Modelos» apuntan al catálogo en lugar de solo `adb push`.
+
+### Fixed
+- `ModelMetadata.quantizationFromName` no reconocía cuantizaciones en minúsculas (`q4_k_m`) y devolvía `Q4_K`.
+
 - `mobile_app/lib/presentation/models/model_screen.dart`: pantalla «Modelos» — inventario con tamaño/cuantización/familia, modelo activo, activación (recarga el motor liberando el GGUF anterior), eliminación con confirmación, modelos sueltos (`adb push`) e instalaciones incompletas; importación con diálogo de fases.
 - `mobile_app/test/model_screen_test.dart`: 5 pruebas de la pantalla (inventario, activar, eliminar aislado, importar, cancelar).
 - Importación SAF: `MainActivity.pickAndImport` (selector `ACTION_OPEN_DOCUMENT` + copia `.part` + renombrado a `files/imports/`) y `AssetModelInstaller.pickAndImport` en Dart.

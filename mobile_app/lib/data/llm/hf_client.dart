@@ -142,7 +142,9 @@ class HfClient {
       final String? sha;
       if (lfs is Map) {
         size = (lfs['size'] as num?)?.toInt() ?? 0;
-        sha = lfs['oid'] as String?;
+        // Hugging Face publica el SHA-256 como `sha256` en el almacenamiento
+        // Xet actual y como `oid` en repos LFS anteriores.
+        sha = (lfs['sha256'] as String?) ?? (lfs['oid'] as String?);
       } else {
         size = (item['size'] as num?)?.toInt() ?? 0;
         sha = null;

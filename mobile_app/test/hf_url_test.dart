@@ -45,6 +45,34 @@ void main() {
     });
   });
 
+  group('política de hosts', () {
+    test('acepta el CDN de Hugging Face y sus subdominios', () {
+      const policy = HfUrlPolicy();
+
+      expect(
+        policy.allows(Uri.parse('https://us.aws.cdn.hf.co/xet-bridge-us/x')),
+        isTrue,
+      );
+      expect(
+        policy.allows(Uri.parse('https://cdn-lfs.huggingface.co/x')),
+        isTrue,
+      );
+    });
+
+    test('rechaza un dominio que solo parece de Hugging Face', () {
+      const policy = HfUrlPolicy();
+
+      expect(
+        policy.allows(Uri.parse('https://hf.co.evil.com/x')),
+        isFalse,
+      );
+      expect(
+        policy.allows(Uri.parse('https://evil.com/x')),
+        isFalse,
+      );
+    });
+  });
+
   group('enlaces rechazados', () {
     test('http plano', () {
       expect(

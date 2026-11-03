@@ -64,6 +64,15 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [x] T4.2 Permitir importar modelos desde el sistema de archivos: `ModelManager.importModel()` (SHA-256, espacio, renombrado atómico) + selector SAF en `MainActivity` (`pickAndImport`) + pantalla «Modelos» con activación y eliminación con confirmación.
 - [x] T4.3 Manejar errores de modelo no encontrado / corrupto: estado «Falta el modelo» sin errores FFI crudos; hash incorrecto rechazado sin residuos; modelos incompletos nunca se cargan.
 - [ ] T4.4 Validar compatibilidad modelo base ↔ proyector `mmproj.gguf`.
+- [x] T4.5 Descargar modelos GGUF desde Hugging Face dentro de la app.
+  - `hf_url.dart` (solo HTTPS de `huggingface.co`/`hf.co`, repos y archivos `.gguf`, redirecciones del CDN incluidas en la política), `hf_client.dart` (API `/api/models/{repo}?blobs=true` con tamaño y SHA-256 de LFS), `model_downloader.dart` (`.part` reanudable con `Range`, cancelación que conserva el parcial, SHA-256 en el mismo pase, espacio verificado, cada redirección validada) y `ModelManager.registerDownloaded` (renombrado atómico del staging, sin copiar). Pruebas contra `HttpServer` local, sin red real.
+- [x] T4.6 Importar un modelo desde una URL pegada por el usuario.
+  - `HfUrlDialog`: valida la URL, resuelve el repositorio y deja elegir el `.gguf`; errores de red, 404 y repos privados con mensaje en español.
+- [x] T4.7 Gestión de almacenamiento y borrado total.
+  - `ModelManager.usageBytes`, `removeOrphan`, `purgeIncomplete`, `removeAllModels` y `clearActiveModel`; «Modelos» muestra usado/libre, permite borrar sueltos e incompletas y «Borrar todo» con confirmación y espacio a liberar. Nunca toca `lain.db`, conversaciones ni configuración.
+- [x] T4.8 Compatibilidad real por arquitectura GGUF.
+  - `gguf_header.dart` lee `general.architecture` (v2/v3) sin cargar el archivo; `engine_capabilities.dart` lista las arquitecturas verificadas en `libllama.so` (`caa8191`: `lfm2` sí, `lfm3` no). La importación y la descarga registran la arquitectura y `setActiveModel` bloquea las no soportadas; LFM3-1.7B queda descargable pero no activable hasta recompilar llama.cpp.
+- [ ] T4.9 Recompilar el motor con `lfm3` para activar LFM3-1.7B (fuera de esta entrega: no se tocan `lain_llm.c`, `jniLibs/` ni `build_llama_android.sh`).
 
 ### Funcionalidad 8: Consciencia funcional y metacognición
 - [ ] T8.1 Integrar enrutador Laya/BMP (~15 ms) para clasificar emoción e intención.
