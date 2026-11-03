@@ -1,7 +1,7 @@
 # STATE.md
 
 ## Tarea en curso
-Infraestructura de modelos terminada (S1–S6) y APK release compilado y verificado (**31.3 MB**, SHA-256 `df78d0a1…`, sin GGUF/ONNX, permiso `INTERNET`): descarga de GGUF desde Hugging Face con reanudación, importación por URL, sonda de arquitectura GGUF con bloqueo de modelos incompatibles y gestión de almacenamiento (borrado individual y total). **Pendiente: validación del usuario en el Samsung Galaxy A14.** No se declara validado en Android físico hasta que el usuario realice las pruebas.
+Infraestructura de modelos terminada (S1–S6) y APK release compilado y verificado (**31.3 MB**, SHA-256 `68d26a1a…`, sin GGUF/ONNX, permiso `INTERNET`): descarga de GGUF desde Hugging Face con reanudación, importación por URL, sonda de arquitectura GGUF con bloqueo de modelos incompatibles y gestión de almacenamiento (borrado individual y total). **Pendiente: validación del usuario en el Samsung Galaxy A14.** No se declara validado en Android físico hasta que el usuario realice las pruebas.
 
 ## Objetivo actual
 Validar el MVP en un dispositivo Android real con Qwen3-1.7B y el prompt de identidad (sin JSON de metacognición), y presentar el contrato de salida propuesto (Fase C.1) para su revisión antes del SFT de LAIN-ES MVP.

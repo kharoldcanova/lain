@@ -10,7 +10,7 @@
 - `mobile_app/lib/data/llm/model_downloader.dart`: descarga a `models/.download-<id>/` con `.part` reanudable (`Range`), cancelación que conserva el parcial, SHA-256 en el mismo pase, espacio verificado y validación de cada redirección.
 - `mobile_app/lib/data/llm/gguf_header.dart` + `engine_capabilities.dart`: sonda de `general.architecture` del GGUF y capacidades verificadas del motor incluido (`caa8191`: `lfm2` sí, `lfm3` no).
 - `ModelManager.registerDownloaded/removeOrphan/purgeIncomplete/removeAllModels/usageBytes/clearActiveModel` y `ModelMetadata.sourceUrl`.
-- Pruebas: `gguf_header_test`, `engine_capabilities_test`, `hf_url_test`, `hf_client_test`, `model_downloader_test`, `model_catalog_test`, `model_catalog_screen_test` (descarga, reanudación, cancelación, hash, redirecciones, borrado).
+- Pruebas: `gguf_header_test`, `engine_capabilities_test`, `hf_url_test`, `hf_client_test`, `model_downloader_test`, `model_catalog_test`, `model_catalog_screen_test` (descarga, reanudación, cancelación, hash, redirecciones, borrado, cierre de un `.part` completo sin red).
 
 ### Changed
 - **El APK release declara `INTERNET`**: antes solo estaba en `debug`/`profile`, así que la descarga era imposible en release.

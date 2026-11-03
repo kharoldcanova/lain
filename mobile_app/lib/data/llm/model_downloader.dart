@@ -142,6 +142,28 @@ class ModelDownloader {
       totalBytes: declaredTotal,
     ));
 
+    // Descarga previa completa (p. ej. el registro falló después de bajar):
+    // se verifica y se termina sin volver a pedirla. Un `Range` desde el
+    // final provocaría un 416 del servidor.
+    if (declaredTotal > 0 && offset >= declaredTotal) {
+      final digest = await _hashFile(partFile);
+      final published = file.sha256?.toLowerCase();
+      if (published != null && !digest.startsWith(published)) {
+        await partFile.delete();
+        throw const DownloadException(
+          'el SHA-256 del archivo no coincide con el publicado; se descartó '
+          'la descarga parcial',
+        );
+      }
+      await partFile.rename(finalFile.path);
+      return DownloadedFile(
+        staging: staging,
+        file: finalFile,
+        sha256: digest,
+        sizeBytes: offset,
+      );
+    }
+
     var uri = _uriFor?.call(file) ?? file.downloadUri;
     if (!_policy.allows(uri)) {
       throw const DownloadException(
@@ -310,6 +332,17 @@ class ModelDownloader {
     } on FileSystemException {
       return 0;
     }
+  }
+
+  /// SHA-256 de un archivo ya en disco (usado al reanudar/cerrar sin red).
+  Future<String> _hashFile(File file) async {
+    final sink = _DigestSink();
+    final converter = sha256.startChunkedConversion(sink);
+    await for (final chunk in file.openRead()) {
+      converter.add(chunk);
+    }
+    converter.close();
+    return sink.value.toString();
   }
 
   String _mib(int bytes) => '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MiB';

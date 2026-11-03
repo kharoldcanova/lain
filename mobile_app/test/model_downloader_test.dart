@@ -255,6 +255,25 @@ void main() {
     );
   });
 
+  test('un .part completo se cierra sin volver a pedir la descarga', () async {
+    final bytes = List<int>.generate(50000, (index) => index % 251);
+    var requests = 0;
+    await start((request) {
+      requests++;
+      serveBytes(request, bytes);
+    });
+    final staging = Directory('${root.path}/.download-modelo-q4_k_m')
+      ..createSync();
+    File('${staging.path}/modelo-Q4_K_M.gguf.part')
+        .writeAsBytesSync(bytes);
+
+    final result = await downloader().download(file: fileFor(bytes));
+
+    expect(requests, 0);
+    expect(result.file.readAsBytesSync(), bytes);
+    expect(result.sha256, sha256.convert(bytes).toString());
+  });
+
   test('discard borra solo el staging de la descarga', () async {
     final staging = Directory('${root.path}/.download-x')..createSync();
     File('${staging.path}/a.part').writeAsStringSync('parcial');

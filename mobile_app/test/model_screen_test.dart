@@ -7,6 +7,7 @@ import 'package:lain_mobile/data/llm/model_installer.dart';
 import 'package:lain_mobile/data/llm/model_manager.dart';
 import 'package:lain_mobile/domain/chat/chat_state.dart';
 import 'package:lain_mobile/presentation/chat/chat_controller.dart';
+import 'package:lain_mobile/presentation/models/model_catalog_screen.dart';
 import 'package:lain_mobile/presentation/models/model_screen.dart';
 
 import 'support/gguf_fixture.dart';
@@ -295,6 +296,26 @@ void main() {
     expect(await tester.runAsync(manager.inventory), isEmpty);
     expect(memory.readAsStringSync(), 'recuerdos');
     expect(find.textContaining('No hay modelos registrados'), findsOneWidget);
+  });
+
+  testWidgets('abre el catálogo de descargas desde Modelos', (tester) async {
+    final manager = ModelManager(root);
+    await tester.runAsync(() async {
+      await tester.pumpWidget(app(manager));
+    });
+    await settleIo(tester);
+    await tester.pumpAndSettle();
+
+    await tester.runAsync(() async {
+      await tester.tap(find.byIcon(Icons.cloud_download_outlined));
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+    });
+    // El catálogo arranca cargando (spinner): basta comprobar la navegación,
+    // su contenido se cubre en model_catalog_screen_test.dart.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byType(ModelCatalogScreen), findsOneWidget);
   });
 
   testWidgets('un modelo de arquitectura no soportada no se puede activar',
