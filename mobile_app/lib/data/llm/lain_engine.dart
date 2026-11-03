@@ -8,6 +8,21 @@ import 'lain_native.dart';
 /// Motor de inferencia. Implementación nativa en un isolate aparte para no
 /// bloquear la UI: el isolate queda dentro de `lain_generate` y reenvía cada
 /// pieza de texto por un puerto.
+/// Fuente opcional de métricas del motor (solo puente experimental).
+///
+/// Se mantiene aparte de [LainEngine] para no romper implementaciones que no
+/// instrumentan (producción y motores falsos de pruebas).
+abstract interface class LainMetricsSource {
+  /// Métricas del último turno completado, o `null` si no hay.
+  LainTurnMetrics? get lastMetrics;
+
+  /// Archivo de la variante de backend cargada, o `null` si no se puede saber.
+  String? get backendName;
+
+  /// `true` si el motor expone `lain_last_metrics`.
+  bool get instrumented;
+}
+
 abstract interface class LainEngine {
   bool get isReady;
 
@@ -25,16 +40,28 @@ abstract interface class LainEngine {
   Future<void> dispose();
 }
 
-class NativeLainEngine implements LainEngine {
+class NativeLainEngine implements LainEngine, LainMetricsSource {
   SendPort? _commands;
   ReceivePort? _events;
   Isolate? _isolate;
   Completer<void>? _loadCompleter;
   StreamController<String>? _generation;
   bool _ready = false;
+  LainTurnMetrics? _lastMetrics;
+  String? _backendName;
+  bool _instrumented = false;
 
   @override
   bool get isReady => _ready;
+
+  @override
+  LainTurnMetrics? get lastMetrics => _lastMetrics;
+
+  @override
+  String? get backendName => _backendName;
+
+  @override
+  bool get instrumented => _instrumented;
 
   Future<void> _ensureStarted() async {
     if (_isolate != null) return;
@@ -60,7 +87,16 @@ class NativeLainEngine implements LainEngine {
         _loadCompleter = null;
       case 'token':
         _generation?.add(event[1] as String);
+      case 'backend':
+        _backendName = event[1] as String?;
+        _instrumented = event.length > 2 && event[2] == true;
       case 'done':
+        final raw = event.length > 1 ? event[1] : null;
+        if (raw is Map) {
+          _lastMetrics = LainTurnMetrics.fromJson(
+            Map<String, Object?>.from(raw),
+          );
+        }
         _generation?.close();
         _generation = null;
       case 'error':
@@ -118,6 +154,9 @@ class NativeLainEngine implements LainEngine {
     _events?.close();
     _events = null;
     _ready = false;
+    _lastMetrics = null;
+    _backendName = null;
+    _instrumented = false;
   }
 }
 
@@ -157,6 +196,11 @@ void _engineWorker(List<Object> args) {
             command[3] as int,
           );
           events.send(<Object>['loaded']);
+          events.send(<Object?>[
+            'backend',
+            native.backendName(),
+            native.supportsInstrumentation,
+          ]);
         } on Object catch (error) {
           events.send(<Object>['error', '$error']);
         }
@@ -172,18 +216,33 @@ void _engineWorker(List<Object> args) {
             command[1] as String,
             command[2] as String,
           );
-          native.generate(
-            handle,
-            prompt,
-            command[3] as int,
-            command[4] as double,
-            command[5] as double,
-            command[6] as int,
-            callable.nativeFunction,
-          );
+          if (native.supportsCustomSampling) {
+            // Mismos valores efectivos que producción: top_k 40, sin penalización.
+            native.generateEx(
+              handle,
+              prompt,
+              command[3] as int,
+              command[4] as double,
+              command[5] as double,
+              40,
+              1.0,
+              command[6] as int,
+              callable.nativeFunction,
+            );
+          } else {
+            native.generate(
+              handle,
+              prompt,
+              command[3] as int,
+              command[4] as double,
+              command[5] as double,
+              command[6] as int,
+              callable.nativeFunction,
+            );
+          }
           final tail = chunker.flush();
           if (tail.isNotEmpty) events.send(<Object>['token', tail]);
-          events.send(<Object>['done']);
+          events.send(<Object?>['done', native.lastMetrics(handle)?.toJson()]);
         } on Object catch (error) {
           events.send(<Object>['error', '$error']);
         }

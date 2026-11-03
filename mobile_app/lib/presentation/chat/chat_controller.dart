@@ -5,8 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/experimental.dart';
 import '../../data/diagnostics/startup_log.dart';
+import '../../data/diagnostics/turn_log.dart';
 import '../../data/llm/lain_engine.dart';
+import '../../data/llm/lain_native.dart';
 import '../../data/llm/model_installer.dart';
 import '../../data/llm/model_store.dart';
 import '../../data/storage/chat_store.dart';
@@ -37,6 +40,9 @@ final modelLocatorProvider = Provider<Future<ModelLocation> Function()>(
 final modelInstallerProvider = Provider<ModelInstaller>(
   (ref) => AssetModelInstaller(),
 );
+
+/// Registro local de turnos (solo se consulta desde Diagnóstico).
+final turnLogProvider = Provider<TurnLog>((ref) => TurnLog());
 
 /// Persistencia del historial. Si la base de datos no abre, el chat sigue
 /// funcionando sin memoria (degradación explícita).
@@ -208,6 +214,10 @@ class ChatController extends Notifier<ChatState> {
 
     _memory?.savePrompt(text);
     final parser = ThinkParser();
+    final clock = Stopwatch()..start();
+    int? firstTokenMs;
+    var chars = 0;
+    Object? inferenceError;
     try {
       final system = await ref.read(systemPromptProvider.future);
       final memory = _memoryContext(text);
@@ -215,9 +225,6 @@ class ChatController extends Notifier<ChatState> {
             systemPrompt: memory == null ? system : '$system\n\n$memory',
             userMessage: text,
           );
-      final clock = Stopwatch()..start();
-      int? firstTokenMs;
-      var chars = 0;
       await for (final piece in stream) {
         firstTokenMs ??= clock.elapsedMilliseconds;
         chars += piece.length;
@@ -236,12 +243,82 @@ class ChatController extends Notifier<ChatState> {
         thought: parser.thought,
       );
     } on Object catch (error) {
+      inferenceError = error;
       _setLastLain('No pude responder: $error');
     } finally {
+      final engine = ref.read(lainEngineProvider);
+      final metrics =
+          engine is LainMetricsSource ? (engine as LainMetricsSource).lastMetrics : null;
       await _persistTurn();
       state = state.copyWith(generating: false);
+      await _recordTurn(
+        metrics: metrics,
+        firstTokenMs: firstTokenMs,
+        elapsedMs: clock.elapsedMilliseconds,
+        chars: chars,
+        error: inferenceError,
+      );
     }
   }
+
+  /// Guarda el turno en `lain_turns.jsonl` (best-effort).
+  ///
+  /// Si el motor no instrumenta (producción) se registran igual TTFT, total,
+  /// longitud y memoria medidos en Dart, con `instrumented: false`.
+  Future<void> _recordTurn({
+    required LainTurnMetrics? metrics,
+    required int? firstTokenMs,
+    required int elapsedMs,
+    required int chars,
+    required Object? error,
+  }) async {
+    // Producción no escribe diagnóstico ni consulta métricas opcionales.
+    if (!ref.read(experimentalModeProvider)) return;
+    try {
+      final currentRss = ProcessInfo.currentRss;
+      final maxRss = ProcessInfo.maxRss;
+      // `maxRss` es un contador del kernel con granularidad de KB y puede
+      // quedar por debajo de `currentRss` por redondeo/orden de muestreo:
+      // el pico registrado es el mayor de los dos.
+      final peakRss = maxRss > currentRss ? maxRss : currentRss;
+      final engine = ref.read(lainEngineProvider);
+      final source =
+          engine is LainMetricsSource ? engine as LainMetricsSource : null;
+      final modelPath = state.modelPath;
+      final record = <String, Object?>{
+        'ts': DateTime.now().toUtc().toIso8601String(),
+        'model': modelPath?.split('/').last,
+        'backend': source?.backendName,
+        'instrumented': source?.instrumented ?? false,
+        'ttft_ms': metrics?.ttftMs ?? firstTokenMs,
+        'total_ms': elapsedMs,
+        'load_ms': metrics?.loadMs,
+        'prefill_ms': metrics?.prefillMs,
+        'decode_ms': metrics?.decodeMs,
+        'n_prompt': metrics?.nPromptTokens,
+        'n_generated': metrics?.nGeneratedTokens,
+        'tok_per_s': metrics == null
+            ? null
+            : double.parse(metrics.tokensPerSecond.toStringAsFixed(2)),
+        'n_threads': metrics?.nThreads,
+        'n_batch_threads': metrics?.nBatchThreads,
+        'n_ctx': metrics?.nCtx,
+        'load_mode': metrics?.loadMode,
+        'n_backend': metrics?.nBackend,
+        'rss_mb': _megabytes(currentRss),
+        'max_rss_mb': _megabytes(peakRss),
+        'chars': chars,
+        'inference_error': error?.toString(),
+      };
+      await ref.read(turnLogProvider).append(record);
+    } on Object {
+      // Un fallo de instrumentación nunca interrumpe la conversación.
+    }
+  }
+
+  double _megabytes(int bytes) =>
+      double.parse((bytes / (1024 * 1024)).toStringAsFixed(1));
+
 
   Future<void> _persistTurn() async {
     final store = _store;
