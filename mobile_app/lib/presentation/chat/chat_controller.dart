@@ -96,10 +96,11 @@ class ChatController extends Notifier<ChatState> {
           modelPath: location.expectedPath,
           clearProgress: true,
           error: 'No hay ningún modelo de lenguaje instalado.\n\n'
-              'Para hablar conmigo, importá un archivo .gguf a la carpeta de '
-              'modelos de LAIN. Por ahora podés copiarlo con adb:\n'
+              'Abrí «Modelos» y descargá uno de Hugging Face (por ejemplo '
+              'LFM2.5-1.2B, 731 MB), importá un archivo .gguf desde el '
+              'teléfono o copialo con adb:\n'
               'adb push tu-modelo.gguf ${location.expectedPath}/\n\n'
-              'La importación desde la app llega en la próxima actualización.',
+              'Después tocá «Usar» para activarlo.',
         );
         return;
       }

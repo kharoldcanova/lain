@@ -100,7 +100,7 @@ class ModelMetadata {
   /// Cuantización detectada en un nombre de archivo (`Q4_K_M`, `Q5_0`, …).
   static String quantizationFromName(String fileName) {
     final match = RegExp(
-      r'([Qq]\d(?:_[Kk](?:_[SLM])?)?|iq\d_?[a-z0-9]*|f16|bf16)',
+      r'([Qq]\d(?:_[Kk](?:_[SLMslm])?)?|iq\d_?[a-z0-9]*|f16|bf16)',
     ).firstMatch(fileName);
     return match?.group(1)?.toUpperCase() ?? 'desconocida';
   }

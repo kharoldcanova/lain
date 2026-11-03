@@ -10,6 +10,7 @@ import '../../data/llm/model_installer.dart';
 import '../../data/llm/model_manager.dart';
 import '../../data/llm/model_metadata.dart';
 import '../chat/chat_controller.dart';
+import 'model_catalog_screen.dart';
 
 /// Gestor de modelos de la app, abierto sobre `files/models/`.
 final modelManagerProvider = Provider<Future<ModelManager>>((ref) {
@@ -112,6 +113,13 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
     } on Object catch (error) {
       if (mounted) _snack('$error');
     }
+  }
+
+  Future<void> _openCatalog() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ModelCatalogScreen()),
+    );
+    await _refresh();
   }
 
   Future<void> _confirmDelete(ModelMetadata model) async {
@@ -373,6 +381,11 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
         title: const Text('Modelos'),
         actions: [
           IconButton(
+            onPressed: _openCatalog,
+            icon: const Icon(Icons.cloud_download_outlined),
+            tooltip: 'Descargar modelos',
+          ),
+          IconButton(
             onPressed: _importModel,
             icon: const Icon(Icons.add),
             tooltip: 'Importar .gguf',
@@ -574,8 +587,9 @@ class _EmptyModels extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Text(
-        'No hay modelos registrados. Tocá el botón + para importar un archivo '
-        '.gguf desde tu dispositivo, o copialo con adb:\n'
+        'No hay modelos registrados. Tocá el botón de la nube para descargar '
+        'un modelo de Hugging Face, el botón + para importar un archivo .gguf '
+        'desde tu dispositivo, o copialo con adb:\n'
         'adb push tu-modelo.gguf /storage/emulated/0/Android/data/'
         'com.lain.lain_mobile/files/models/',
       ),
