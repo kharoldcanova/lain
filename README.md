@@ -14,10 +14,11 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 
 - **Plataforma principal:** Android (base extensible a iOS).
 - **Frontend / UI:** Flutter (Dart).
-- **Motor de Inferencia de Texto (LLM):** `llama.cpp` vía FFI (Qwen2.5-3B-Instruct afinado con QLoRA y cuantizado en GGUF Q4_K_M).
+- **Motor de Inferencia de Texto (LLM):** `llama.cpp` vía FFI (LFM2.5-1.2B-Instruct cuantizado en GGUF Q4_K_M en el móvil; Qwen2.5-3B-Instruct afinado en PC).
 - **Motor de Voz (STT/TTS):** `whisper.cpp` (entrada) y Kokoro/Piper o TTS nativo (salida).
 - **Clasificador de decisión/emoción:** Laya / BMP (~15 ms, ~100 MB RAM).
 - **Percepción visual:** MiniCPM-V 4 (GGUF + `mmproj`) describe la imagen en texto y ese texto entra al LLM de texto (dos pasos).
+- **Builds:** el APK ya no empaqueta modelos; se descargan desde Hugging Face (pantalla «Modelos» / «Descargar modelos»). Dos flavors: producción (`com.lain.lain_mobile`, 31.4 MB, motor estático) y experimental (`com.lain.lain_mobile.exp`, 14.0 MB, solo arm64-v8a, 7 variantes GGML con carga dinámica y pantalla «Diagnóstico»). Detalle en `STATE.md` y `TASKS.md`.
 - **Capacitación / Pre-entrenamiento (PC):** Python + PyTorch + Unsloth (SFT/CoT y DPO).
 - **Persistencia local:** SQLite (`package:sqlite3`, FTS5 trigram) para historial y memoria + `lain_experiences.jsonl` (trazas metacognitivas).
 - **Restricciones:** 100% offline, privacidad total de los datos en el dispositivo.

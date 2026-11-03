@@ -34,3 +34,18 @@ Repositorio con documentación base completa, estructura de carpetas (`mobile_ap
 - Creencias dinámicas evolutivas (modificables) con ajuste bayesiano.
 - Estructura prevista: `mobile_app/` (Flutter) y `python_ai/` (entrenamiento).
 - No inventar comandos ni tooling hasta que existan manifiestos reales.
+
+## Transparencia de ejecución de agentes
+
+Durante tareas prolongadas o ejecutadas en background:
+
+1. Mantener un registro actualizado de cada tarea activa.
+2. Informar qué está haciendo cada worker y cuál es su objetivo.
+3. Registrar los comandos importantes ejecutados y sus resultados.
+4. Identificar archivos leídos y modificados.
+5. Registrar el estado de cada etapa: pendiente, ejecutando, completada o bloqueada.
+6. Informar cuando un worker termina, falla o necesita intervención.
+7. No presentar estimaciones como resultados verificados.
+8. No modificar archivos del repositorio sin respetar las aprobaciones y el flujo de trabajo establecido.
+
+Al solicitar el estado de ejecución, proporcionar un resumen de todos los procesos y subagentes activos, incluyendo sus últimas operaciones verificables.

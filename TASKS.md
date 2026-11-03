@@ -73,6 +73,27 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
 - [x] T4.8 Compatibilidad real por arquitectura GGUF.
   - `gguf_header.dart` lee `general.architecture` (v2/v3) sin cargar el archivo; `engine_capabilities.dart` lista las arquitecturas verificadas en `libllama.so` (`caa8191`: `lfm2` sí, `lfm3` no). La importación y la descarga registran la arquitectura y `setActiveModel` bloquea las no soportadas; LFM3-1.7B queda descargable pero no activable hasta recompilar llama.cpp.
 - [ ] T4.9 Recompilar el motor con `lfm3` para activar LFM3-1.7B (fuera de esta entrega: no se tocan `lain_llm.c`, `jniLibs/` ni `build_llama_android.sh`).
+- [x] T4.10 APK experimental con motor de variantes ARM y diagnóstico local (F1–F4).
+  - `GGML_CPU_ALL_VARIANTS=ON` + `GGML_BACKEND_DL=ON` para arm64 (7 variantes `android_*`); puente experimental con `dladdr` + `ggml_backend_load_all_from_path` (sin fallback silencioso); métricas nativas (`lain_last_metrics`, `lain_generate_ex`) y pantalla «Diagnóstico»; flavors `prod`/`experimental` con `applicationId` distinto y APK experimental solo arm64. Producción conserva sus `.so` byte a byte. Pendiente: validar la carga DL en el A14 (sin ADB disponible).
+
+## Fase 5: Validación en dispositivo real (experimental)
+
+Primera prueba real realizada el 2026-11-03 en Samsung Galaxy A14 (APK experimental), modelo `LFM2.5-1.2B-Instruct-Q4_K_M.gguf`.
+
+- [x] Instalación de la APK experimental en el dispositivo.
+- [x] Carga dinámica de backend: confirmada (`libggml-cpu-android_armv8.2_2.so`).
+- [x] Identificación del backend: confirmada.
+- [x] Inferencia real sin error: confirmada (50 tokens, `inference_error: null`).
+- [x] Primera muestra de rendimiento registrada (TTFT 14.228 s, total 26.701 s, 4.06 tok/s, pico RSS 1.447,9 MB).
+- [ ] Cinco muestras experimentales (pendiente).
+- [ ] Comparación controlada con producción (pendiente; observación cualitativa del usuario: producción tarda más, sin medición).
+- [ ] Estabilidad prolongada (pendiente).
+- [ ] Evaluación de memoria más allá de la muestra preliminar (pendiente).
+- [ ] Investigar si el resumen estadístico de la pantalla de diagnóstico exige un mínimo de cinco muestras (sin modificar código en esta tarea).
+
+### Fase 6: Distribución y endurecimiento (pendiente, no iniciada)
+
+Fase no iniciada. No se han definido aún sus tareas; no comenzar hasta cerrar F5.
 
 ### Funcionalidad 8: Consciencia funcional y metacognición
 - [ ] T8.1 Integrar enrutador Laya/BMP (~15 ms) para clasificar emoción e intención.

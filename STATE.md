@@ -1,10 +1,10 @@
 # STATE.md
 
 ## Tarea en curso
-Infraestructura de modelos terminada (S1–S6) y APK release compilado y verificado (**31.3 MB**, SHA-256 `68d26a1a…`, sin GGUF/ONNX, permiso `INTERNET`): descarga de GGUF desde Hugging Face con reanudación, importación por URL, sonda de arquitectura GGUF con bloqueo de modelos incompatibles y gestión de almacenamiento (borrado individual y total). **Pendiente: validación del usuario en el Samsung Galaxy A14.** No se declara validado en Android físico hasta que el usuario realice las pruebas.
+F4 completada: dos APK (producción 31.369.787 bytes, SHA-256 `e5b8208a…`; experimental 14.006.688 bytes, SHA-256 `e215d246…`) con carga dinámica de variantes ARM y pantalla de diagnóstico. Primer ensayo real de F5 en Samsung Galaxy A14 (experimental, `LFM2.5-1.2B-Instruct-Q4_K_M.gguf`, backend `libggml-cpu-android_armv8.2_2.so`): carga dinámica confirmada, inferencia sin error, 50 tokens, 4.06 tok/s, TTFT 14.228 s, total 26.701 s, pico RSS 1.447,9 MB. **Pendiente: 5 muestras experimentales, comparación controlada con producción, estabilidad prolongada.** No se declara F5 completada.
 
 ## Objetivo actual
-Validar el MVP en un dispositivo Android real con Qwen3-1.7B y el prompt de identidad (sin JSON de metacognición), y presentar el contrato de salida propuesto (Fase C.1) para su revisión antes del SFT de LAIN-ES MVP.
+Validar el motor experimental en el Samsung Galaxy A14 (F5): completar cinco muestras, comparación controlada con producción, estabilidad prolongada y evaluación de memoria. Paralelamente decidir si se adopta el motor de variantes ARM en producción. F6 (distribución y endurecimiento) no se inicia hasta cerrar F5.
 
 
 ## Objetivo anterior
@@ -72,6 +72,89 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 
 ## Completado (nuevo)
 - S1–S6 de gestión de modelos: `INTERNET` en el manifest principal, `usageBytes`/`removeOrphan`/`purgeIncomplete`/`removeAllModels`/`clearActiveModel`; sonda `general.architecture` del GGUF y `engine_capabilities` verificadas contra `libllama.so` (`lfm2` sí, `lfm3` no) con bloqueo de activación; `hf_url`/`hf_client` (API pública, SHA-256 de LFS `sha256`/`oid`), `model_downloader` (Range, cancelación, hash, espacio, redirecciones validadas también al CDN `*.hf.co`) y `registerDownloaded` por renombrado; catálogo y pantalla de descargas con eliminación. 141 pruebas en verde y `flutter analyze` limpio.
+- F4: separación de APK de producción (`com.lain.lain_mobile`, 31.369.787 bytes, SHA-256 `e5b8208a…`) y experimental (`com.lain.lain_mobile.exp`, 14.006.688 bytes, SHA-256 `e215d246…`); producción conserva las `.so` originales verificadas byte a byte, experimental solo arm64-v8a con 7 variantes GGML y carga dinámica; ambas instalables simultáneamente con datos independientes. `flutter analyze` sin problemas, `flutter test` 161 satisfactorias.
+- F5 (primer ensayo real, 2026-11-03): carga dinámica confirmada en Samsung Galaxy A14 con `libggml-cpu-android_armv8.2_2.so`, inferencia sin error, 50 tokens, 4.06 tok/s, TTFT 14.228 s, total 26.701 s, pico RSS 1.447,9 MB. Observación cualitativa: el usuario reporta que producción tarda más, sin medición controlada ni cinco muestras.
+
+## Builds y flavors (F4)
+
+Dos APK conviven en el mismo teléfono (data separada por `applicationId`):
+
+| | Producción | Experimental |
+|---|---|---|
+| applicationId | `com.lain.lain_mobile` | `com.lain.lain_mobile.exp` |
+| versionName | `0.1.0` | `0.1.0-exp` |
+| ABI | arm64-v8a + x86_64 | **solo arm64-v8a** |
+| Motor | `.so` originales (`src/prod/jniLibs`) | 7 variantes GGML + puente DL (`src/experimental/jniLibs`) |
+| Diagnóstico | oculto, sin métricas opcionales | visible (`LAIN_EXPERIMENTAL=true`) |
+
+```bash
+# producción (comportamiento y bibliotecas actuales)
+flutter build apk --release --flavor prod \
+  --dart-define=LAIN_EXPERIMENTAL=false --dart-define=LAIN_FLAVOR=prod
+
+# experimental (arm64; el flag debe pasarse explícitamente)
+flutter build apk --release --flavor experimental --target-platform android-arm64 \
+  --dart-define=LAIN_EXPERIMENTAL=true --dart-define=LAIN_FLAVOR=experimental
+```
+
+`String.fromEnvironment` no detecta el flavor solo: `LAIN_EXPERIMENTAL` y `LAIN_FLAVOR` se pasan siempre con `--dart-define`. Sin `--target-platform android-arm64` el APK experimental incluiría libs de Flutter para armv7/x86 y `jni` aportaría `libdartjni.so` de otras ABIs (se excluyen además en Gradle).
+
+**Datos separados:** cada `applicationId` tiene su propio `getApplicationSupportDirectory()`/`getExternalStorageDirectory()`. Los modelos descargados en producción **no aparecen** en experimental (y viceversa); hay que descargarlos otra vez en cada app. No se copian ni migran datos de usuario.
+
+**Reversión:** producción usa copia byte a byte de las `.so` originales (backup en `~/lain-engine-backup/2026-11-03/`); el flavor experimental nunca escribe en `src/prod/jniLibs`.
+
+## Primer ensayo real de F5 (experimental)
+
+Realizado el 2026-11-03 en el teléfono del usuario (Samsung Galaxy A14), APK experimental, modelo `LFM2.5-1.2B-Instruct-Q4_K_M.gguf`.
+
+Resultados confirmados (una única muestra):
+
+| Métrica | Valor |
+|---|---|
+| Backend identificado | `libggml-cpu-android_armv8.2_2.so` |
+| Carga dinámica | Confirmada |
+| Inferencia | Sin error (`inference_error: null`) |
+| Tokens generados | 50 |
+| Velocidad | 4.06 tok/s |
+| TTFT | 14.228 s |
+| Total | 26.701 s |
+| Prefill | 14.128 s |
+| Decode | 12.326 s |
+| load_ms | 3.382 s |
+| n_prompt | 441 |
+| n_generated | 50 |
+| n_threads / n_batch_threads | 4 / 4 |
+| n_ctx | 2048 |
+| load_mode | -1 |
+| n_backend | 1 |
+| rss_mb | 780.0 |
+| max_rss_mb | 1.447,9 MB |
+| chars | 170 |
+
+**Interpretación técnica (preliminar, una sola muestra):**
+
+- La carga dinámica funcionó en el dispositivo y se identificó el backend `libggml-cpu-android_armv8.2_2.so`.
+- Se completó una inferencia sin errores.
+- El resumen estadístico de la pantalla de diagnóstico muestra `null` porque solo existe una muestra; investigar si el cálculo exige un mínimo de cinco muestras (sin modificar código en esta tarea).
+- El pico de RSS (1.447,9 MB) es una observación puntual, no consumo permanente.
+
+**Comparación con producción:** el usuario reportó cualitativamente que producción tarda más que experimental, pero no proporcionó tiempo exacto ni cinco muestras de ninguna versión y no existe comparación controlada. Registrar como **observación cualitativa**, no como mejora cuantificada. No inventar tiempos, porcentajes ni tokens/s para producción.
+
+### Estado de F5
+
+| Comprobación | Estado |
+|---|---|
+| Instalación experimental | Realizada |
+| Carga dinámica de backend | Confirmada |
+| Identificación del backend | Confirmada |
+| Inferencia real | Confirmada |
+| Primera muestra de rendimiento | Registrada |
+| Cinco muestras experimentales | Pendiente |
+| Comparación controlada con producción | Pendiente |
+| Estabilidad prolongada | Pendiente |
+| Evaluación de memoria | Preliminar |
+
+**F5 no se declara completada. F6 no se inicia.**
 
 ## Próximos pasos
 - Instalar el APK release nuevo y probar la descarga: bajar LFM2.5-1.2B (731 MB) desde «Modelos → Descargar modelos», cancelar y reanudar, activar, conversar, borrar; probar también una URL manual y el modo avión.

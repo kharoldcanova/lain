@@ -2,7 +2,27 @@
 
 ## [Unreleased]
 
+### F4 — Separación de APK de producción y experimental (completada)
+
+- Dos APK con `applicationId` distinto: producción `com.lain.lain_mobile` (31.369.787 bytes, SHA-256 `e5b8208a…`), experimental `com.lain.lain_mobile.exp` (14.006.688 bytes, SHA-256 `e215d246…`).
+- Producción conserva las bibliotecas originales verificadas contra el respaldo; experimental solo arm64-v8a con 7 variantes GGML y carga dinámica.
+- Puente experimental con `dladdr` + `ggml_backend_load_all_from_path`, métricas nativas y pantalla «Diagnóstico».
+- `flutter analyze` sin problemas; `flutter test` 161 satisfactorias; verificación de hashes, ABI, permisos, bibliotecas ELF y símbolos.
+- Limitaciones conocidas: carga dinámica sin validación real en Android (ahora validada en F5), producción conserva la declaración de ABI armeabi-v7a sin motor 32-bit, `load_mode AUTO` informa el modo solicitado, claves debug.
+
+### F5 — Primer ensayo real (2026-11-03, experimental, Samsung Galaxy A14)
+
+- Carga dinámica confirmada: backend `libggml-cpu-android_armv8.2_2.so`.
+- Inferencia real sin error con `LFM2.5-1.2B-Instruct-Q4_K_M.gguf`: 50 tokens, 4.06 tok/s, TTFT 14.228 s, total 26.701 s, prefill 14.128 s, decode 12.326 s, pico RSS 1.447,9 MB.
+- El resumen estadístico muestra `null` por tener una sola muestra; investigar si exige un mínimo de cinco.
+- Observación cualitativa (sin medición controlada): el usuario reporta que producción tarda más que experimental. No se inventan tiempos ni porcentajes.
+- F5 no se declara completada; F6 no se inicia.
+
 ### Added
+- Flavors `prod` y `experimental`: dos APK instalables en paralelo (`com.lain.lain_mobile` y `com.lain.lain_mobile.exp`, `0.1.0-exp`), con `.so` separadas en `src/prod/jniLibs` y `src/experimental/jniLibs`. El experimental es solo arm64-v8a (7 variantes GGML `android_*` + puente con carga dinámica).
+- Puente experimental `experimental/cpp/lain_llm.c`: carga de variantes con `dladdr` + `ggml_backend_load_all_from_path` antes de `llama_backend_init`, error explícito si no hay backend, `lain_backend_name`, `lain_generate_ex` y `lain_last_metrics` (carga, prefill, decode, TTFT, tokens, hilos, contexto, `load_mode`).
+- Pantalla «Diagnóstico» (solo experimental) con backend real, configuración efectiva, mediana/p90 desde 5 muestras, copiar y borrar; registro `lain_turns.jsonl` en JSONL.
+- Script: `LAIN_JNI_OUT`, `LAIN_ARM_VARIANTS`, `LAIN_ARM_ARCH`, `LAIN_BRIDGE_SRC`, `LAIN_BUILD_TAG`, `LAIN_STRIP`, resolución de SHA y verificación de `sdot`/`smmla`.
 - `mobile_app/lib/data/llm/model_catalog.dart`: catálogo curado (LFM2.5-1.2B/2.6B, LFM3-1.7B, Qwen3-1.7B, Qwen2.5-3B) con arquitectura, idiomas, tamaño orientativo y nota de compatibilidad.
 - `mobile_app/lib/presentation/models/model_catalog_screen.dart`: pantalla «Descargar modelos» con progreso, cancelación, descarga por URL, instalación/activación y borrado.
 - `mobile_app/lib/presentation/models/hf_url_dialog.dart`: importación por URL de Hugging Face con validación y elección de archivo.

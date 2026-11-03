@@ -1,3 +1,5 @@
+> **Estado actual:** este documento describe el flujo original con el GGUF empaquetado en el APK (ya no se usa). El estado vigente, los builds de producción/experimental, la descarga desde Hugging Face y el primer ensayo real de F5 (2026-11-03) están en `../STATE.md`, `../TASKS.md` y `../CHANGELOG.md`.
+
 # LAIN Mobile (Flutter)
 
 App Android con inferencia **100% local**: un GGUF corre dentro del teléfono

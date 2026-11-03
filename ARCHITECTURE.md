@@ -9,7 +9,7 @@
 
 ## Marcos teóricos aplicados
 
-- **GWT (Global Workspace Theory):** La interacción entre Whisper (STT), Laya/BMP (clasificador), memoria (SQLite) y Qwen2.5-3B-Instruct (llama.cpp) emula la transmisión de datos a través de un espacio de trabajo global.
+- **GWT (Global Workspace Theory):** La interacción entre Whisper (STT), Laya/BMP (clasificador), memoria (SQLite) y el motor de texto (LFM2.5-1.2B-Instruct en el móvil, llama.cpp) emula la transmisión de datos a través de un espacio de trabajo global.
 - **HOT (Higher-Order Theories):** El bloque `<think>` genera monitoreo interno sobre intención emocional, incertidumbre y sesgos antes de la respuesta externa.
 - **RPT (Recurrent Processing Theory):** Laya/BMP evalúa el impacto de una respuesta previa y ajusta la traza de razonamiento antes de responder (bucles recurrentes).
 
@@ -24,7 +24,7 @@
 Decisión: no se comparten embeddings entre visión y texto. La imagen pasa primero por un VLM y sale como texto.
 
 1. **VLM (MiniCPM-V 4, GGUF Q4_K_M + `mmproj`)**: recibe la imagen y devuelve una descripción objetiva en español, con OCR del texto visible (`scripts/vision.py`).
-2. **LLM de texto (Qwen2.5-3B-Instruct)**: recibe esa descripción como contexto del turno y responde con el bloque `<think>` habitual, reflexionando sobre lo descrito.
+2. **LLM de texto (LFM2.5-1.2B-Instruct en móvil)**: recibe esa descripción como contexto del turno y responde con el bloque `<think>` habitual, reflexionando sobre lo descrito.
 
 Por qué:
 
@@ -54,7 +54,7 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
 
 - **Capa de Presentación (Dart/Flutter):** Pantallas de chat, ajustes, gestión de estado con BLoC o Riverpod.
 - **Capa de Negocio / Dominio:** Casos de uso para historiales y memoria local (SQLite), orquestación de prompts, persistencia de experiencias.
-- **Capa de Infraestructura / Nativos (C/C++ / FFI):** Enlaces directos a llama.cpp (Qwen2.5-3B-Instruct) y whisper.cpp compilados como bibliotecas nativas (.so para Android); enrutador Laya/BMP.
+- **Capa de Infraestructura / Nativos (C/C++ / FFI):** Enlaces directos a llama.cpp (LFM2.5-1.2B-Instruct en móvil; Qwen2.5-3B en PC) y whisper.cpp compilados como bibliotecas nativas (.so para Android); enrutador Laya/BMP. El build experimental añade 7 variantes GGML (`libggml-cpu-android_*`) cargadas en runtime con dispatch por SoC.
 - **Capa de Apoyo Externo (Python - PC):** Scripts en Unsloth/PyTorch para SFT/CoT y DPO sobre trazas metacognitivas.
 
 ## Flujo metacognitivo (4 pasos)
