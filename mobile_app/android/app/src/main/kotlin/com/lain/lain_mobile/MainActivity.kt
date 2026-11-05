@@ -1,8 +1,11 @@
 package com.lain.lain_mobile
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.AssetManager
 import android.net.Uri
+import android.os.Build
 import android.os.StatFs
 import android.provider.OpenableColumns
 import io.flutter.embedding.android.FlutterActivity
@@ -14,6 +17,9 @@ import java.io.FileOutputStream
 class MainActivity : FlutterActivity() {
     private var channel: MethodChannel? = null
     private var pendingImport: MethodChannel.Result? = null
+    private var pendingPermission: MethodChannel.Result? = null
+    private val audioRecorder = AudioRecorder()
+    private var tts: TtsPlayer? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -55,6 +61,110 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        configureAudioChannel(flutterEngine)
+        configureTtsChannel(flutterEngine)
+    }
+
+    private fun configureAudioChannel(flutterEngine: FlutterEngine) {
+        val audioChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AUDIO_CHANNEL)
+        audioChannel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "hasPermission" -> result.success(hasMicrophonePermission())
+                "requestPermission" -> {
+                    if (hasMicrophonePermission()) {
+                        result.success(true)
+                        return@setMethodCallHandler
+                    }
+                    if (pendingPermission != null) {
+                        result.error("permission_busy", "ya hay una solicitud en curso", null)
+                        return@setMethodCallHandler
+                    }
+                    pendingPermission = result
+                    requestPermissions(
+                        arrayOf(Manifest.permission.RECORD_AUDIO),
+                        REQUEST_RECORD_AUDIO,
+                    )
+                }
+                "start" -> {
+                    if (!hasMicrophonePermission()) {
+                        result.error("no_permission", "falta el permiso de micrófono", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        audioRecorder.start()
+                        result.success(true)
+                    } catch (error: Throwable) {
+                        result.error("record_failed", error.message ?: error.toString(), null)
+                    }
+                }
+                "stop" -> {
+                    try {
+                        result.success(audioRecorder.stop())
+                    } catch (error: Throwable) {
+                        result.error("record_failed", error.message ?: error.toString(), null)
+                    }
+                }
+                "cancel" -> {
+                    audioRecorder.cancel()
+                    result.success(null)
+                }
+                "isRecording" -> result.success(audioRecorder.isRecording)
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun configureTtsChannel(flutterEngine: FlutterEngine) {
+        val ttsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TTS_CHANNEL)
+        tts = TtsPlayer(this) { event, id ->
+            runOnUiThread {
+                ttsChannel.invokeMethod(event, mapOf("id" to id))
+            }
+        }
+        ttsChannel.setMethodCallHandler { call, result ->
+            val player = tts
+            if (player == null) {
+                result.error("tts_unavailable", "el TTS no está inicializado", null)
+                return@setMethodCallHandler
+            }
+            when (call.method) {
+                "isReady" -> result.success(player.isReady())
+                "speak" -> {
+                    val text = call.argument<String>("text")
+                    val id = call.argument<String>("id") ?: "lain"
+                    val flush = call.argument<Boolean>("flush") ?: false
+                    if (text.isNullOrBlank()) {
+                        result.success(false)
+                        return@setMethodCallHandler
+                    }
+                    result.success(player.speak(text, id, flush))
+                }
+                "stop" -> {
+                    player.stop()
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun hasMicrophonePermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+        return checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != REQUEST_RECORD_AUDIO) return
+        val granted = grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+        pendingPermission?.success(granted)
+        pendingPermission = null
     }
 
     @Deprecated("Deprecated in Java")
@@ -74,6 +184,13 @@ class MainActivity : FlutterActivity() {
             return
         }
         copyUri(data.data!!, targetDir, result)
+    }
+
+    override fun onDestroy() {
+        audioRecorder.cancel()
+        tts?.shutdown()
+        tts = null
+        super.onDestroy()
     }
 
     private fun resolveName(uri: Uri): String {
@@ -195,7 +312,10 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val MODEL_CHANNEL = "com.lain.lain_mobile/model"
+        private const val AUDIO_CHANNEL = "com.lain.lain_mobile/audio"
+        private const val TTS_CHANNEL = "com.lain.lain_mobile/tts"
         private const val BUFFER_SIZE = 1 shl 20
         private const val PICK_MODEL_REQUEST = 1001
+        private const val REQUEST_RECORD_AUDIO = 1002
     }
 }

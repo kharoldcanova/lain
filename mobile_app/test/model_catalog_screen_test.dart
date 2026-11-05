@@ -48,7 +48,10 @@ class _FakeHfClient extends HfClient {
   final List<HfReference> requests = <HfReference>[];
 
   @override
-  Future<List<HfFile>> resolve(HfReference reference) async {
+  Future<List<HfFile>> resolve(
+    HfReference reference, {
+    Set<String> extensions = const <String>{'.gguf'},
+  }) async {
     requests.add(reference);
     final name = reference.file ?? 'LFM2.5-1.2B-Instruct-Q4_K_M.gguf';
     return <HfFile>[

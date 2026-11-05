@@ -10,6 +10,7 @@ import '../../domain/chat/chat_state.dart';
 import '../diagnostics/diagnostics_screen.dart';
 import '../memory/memory_screen.dart';
 import '../models/model_screen.dart';
+import '../voice/voice_providers.dart';
 import 'chat_controller.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -21,18 +22,72 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _input = TextEditingController();
+  bool _recording = false;
+  bool _transcribing = false;
 
   @override
   void dispose() {
+    if (_recording) {
+      ref.read(audioCaptureProvider).cancel();
+    }
     _input.dispose();
     super.dispose();
   }
 
   void _send() {
+    if (_recording) {
+      ref.read(audioCaptureProvider).cancel();
+      setState(() => _recording = false);
+    }
     final controller = ref.read(chatControllerProvider.notifier);
     final text = _input.text;
     _input.clear();
     controller.send(text);
+  }
+
+  Future<void> _toggleRecording() async {
+    final audio = ref.read(audioCaptureProvider);
+    if (_recording) {
+      setState(() => _recording = false);
+      try {
+        final pcm = await audio.stop();
+        if (!mounted) return;
+        setState(() => _transcribing = true);
+        final service = await ref.read(sttServiceProvider.future);
+        final text = await service.transcribe(pcm);
+        if (!mounted) return;
+        if (text.isEmpty) {
+          _snack('No se detectó voz. Probá hablar más cerca del micrófono.');
+          return;
+        }
+        _input.text = text;
+        _input.selection = TextSelection.collapsed(offset: text.length);
+      } on Object catch (error) {
+        if (mounted) _snack('$error');
+      } finally {
+        if (mounted) setState(() => _transcribing = false);
+      }
+      return;
+    }
+
+    try {
+      final granted = await audio.requestPermission();
+      if (!granted) {
+        if (mounted) _snack('Permiso de micrófono denegado.');
+        return;
+      }
+      await audio.start();
+      if (mounted) setState(() => _recording = true);
+    } on Object catch (error) {
+      if (mounted) _snack('$error');
+    }
+  }
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _confirmClear() async {
@@ -78,6 +133,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ),
               ),
             ),
+          IconButton(
+            onPressed: () => ref.read(ttsEnabledProvider.notifier).toggle(),
+            icon: Icon(
+              ref.watch(ttsEnabledProvider)
+                  ? Icons.volume_up_outlined
+                  : Icons.volume_off_outlined,
+            ),
+            tooltip: ref.watch(ttsEnabledProvider)
+                ? 'Voz activada'
+                : 'Voz desactivada',
+          ),
           if (ref.watch(experimentalModeProvider))
             IconButton(
               onPressed: () => Navigator.of(context).push(
@@ -159,6 +225,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    onPressed: state.generating || _transcribing
+                        ? null
+                        : _toggleRecording,
+                    icon: _transcribing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            _recording
+                                ? Icons.stop_circle_outlined
+                                : Icons.mic_none,
+                          ),
+                    tooltip: _recording ? 'Detener dictado' : 'Dictar',
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(

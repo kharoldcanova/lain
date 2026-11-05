@@ -19,6 +19,7 @@ import '../../domain/chat/chat_message.dart';
 import '../../domain/chat/chat_state.dart';
 import '../../domain/chat/think_parser.dart';
 import '../../domain/memory/belief_capture.dart';
+import '../voice/voice_providers.dart';
 
 /// El motor de inferencia es local (dart:ffi) y solo se inicia cuando hay un
 /// modelo instalado en el almacenamiento privado (ver `model_store.dart`).
@@ -189,6 +190,8 @@ class ChatController extends Notifier<ChatState> {
 
   /// Borra el historial persistido y el de pantalla.
   Future<void> clearHistory() async {
+    // Detener la voz es best-effort: nunca debe retrasar el borrado del chat.
+    unawaited(ref.read(speechEngineProvider).stop());
     state = state.copyWith(messages: const <ChatMessage>[]);
     try {
       _store?.clear();
@@ -215,6 +218,11 @@ class ChatController extends Notifier<ChatState> {
     _memory?.savePrompt(text);
     final parser = ThinkParser();
     final clock = Stopwatch()..start();
+    final speechEnabled = ref.read(ttsEnabledProvider);
+    final speech = ref.read(speechEngineProvider);
+    if (speechEnabled) {
+      await speech.beginTurn();
+    }
     int? firstTokenMs;
     var chars = 0;
     Object? inferenceError;
@@ -228,10 +236,23 @@ class ChatController extends Notifier<ChatState> {
       await for (final piece in stream) {
         firstTokenMs ??= clock.elapsedMilliseconds;
         chars += piece.length;
+        final visibleBefore = parser.visible;
         parser.add(piece);
+        final visibleAfter = parser.visible;
+        if (speechEnabled && visibleAfter.length > visibleBefore.length) {
+          speech.add(visibleAfter.substring(visibleBefore.length));
+        }
         _setLastLain(parser.visible.trim(), thought: parser.thought);
       }
+      final visibleBeforeClose = parser.visible;
       parser.close();
+      final visibleAfterClose = parser.visible;
+      if (speechEnabled && visibleAfterClose.length > visibleBeforeClose.length) {
+        speech.add(visibleAfterClose.substring(visibleBeforeClose.length));
+      }
+      if (speechEnabled) {
+        await speech.endTurn();
+      }
       _captureBelief(parser.thought);
       final reply = parser.visible.trim();
       await StartupLog.write(
@@ -244,6 +265,9 @@ class ChatController extends Notifier<ChatState> {
       );
     } on Object catch (error) {
       inferenceError = error;
+      if (speechEnabled) {
+        await speech.stop();
+      }
       _setLastLain('No pude responder: $error');
     } finally {
       final engine = ref.read(lainEngineProvider);

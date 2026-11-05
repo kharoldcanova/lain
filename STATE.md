@@ -1,10 +1,10 @@
 # STATE.md
 
 ## Tarea en curso
-F4 completada: dos APK (producción 31.369.787 bytes, SHA-256 `e5b8208a…`; experimental 14.006.688 bytes, SHA-256 `e215d246…`) con carga dinámica de variantes ARM y pantalla de diagnóstico. Primer ensayo real de F5 en Samsung Galaxy A14 (experimental, `LFM2.5-1.2B-Instruct-Q4_K_M.gguf`, backend `libggml-cpu-android_armv8.2_2.so`): carga dinámica confirmada, inferencia sin error, 50 tokens, 4.06 tok/s, TTFT 14.228 s, total 26.701 s, pico RSS 1.447,9 MB. **Pendiente: 5 muestras experimentales, comparación controlada con producción, estabilidad prolongada.** No se declara F5 completada.
+Voz completada (2026-11-05): dictado local con whisper.cpp (`ggml-base.bin`, ~148 MB) y TTS nativo de Android con lectura progresiva por oraciones. **APK experimental release `0.1.0-exp` compilado: 15.083.154 bytes, SHA-256 `46d7876c…`, solo arm64-v8a, con `liblain_stt.so` y sin GGUF empaquetado.** La sección «Voz (Whisper)» de Modelos descarga el modelo desde Hugging Face. `flutter analyze` limpio y 178 pruebas en verde. F5 (validación experimental en el A14) queda como comprobación opcional: el usuario considera viable el APK experimental por ahora, con una sola muestra registrada y sin comparación controlada.
 
 ## Objetivo actual
-Validar el motor experimental en el Samsung Galaxy A14 (F5): completar cinco muestras, comparación controlada con producción, estabilidad prolongada y evaluación de memoria. Paralelamente decidir si se adopta el motor de variantes ARM en producción. F6 (distribución y endurecimiento) no se inicia hasta cerrar F5.
+Consolidar la voz en el dispositivo: probar el dictado y el TTS en el teléfono real, medir latencia de transcripción y confirmar que la voz es-ES funciona offline. F5 sigue abierta (cinco muestras, comparación con producción, estabilidad) pero no bloquea el resto del trabajo. F6 (distribución y endurecimiento) no se inicia hasta cerrar F5.
 
 
 ## Objetivo anterior
@@ -33,6 +33,11 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - SQLite propio: `package:sqlite3` empaqueta SQLite con FTS5 (no el del sistema); el tokenizer `trigram` exige SQLite ≥ 3.34, por eso no se usa `sqflite`.
 - La memoria se guarda en `getApplicationSupportDirectory()/lain.db`; el historial del chat anterior (vía `sqflite`) no se migra.
 - Dataset local de 87 ejemplos: validar con `validate_dataset.py` antes de cada corrida.
+- Whisper vive en `src/main/jniLibs/liblain_stt.so` (común a ambos flavors) y se compila con `tools/build_whisper_android.sh`; no se versiona (ignorado por git).
+- `liblain_stt.so` oculta todos los símbolos salvo `lain_stt_*` con un version script y enlaza ggml/whisper de forma estática: así no se interpone con las bibliotecas ggml de `liblain_llm.so`.
+- El modelo de voz va en `files/models/whisper/ggml-base.bin`; sin él la app avisa en «Modelos» y el botón de dictado explica cómo descargarlo.
+- El TTS usa el motor nativo del teléfono: si la voz es-ES no está instalada, cae al idioma del sistema; la calidad depende del fabricante.
+- `RECORD_AUDIO` se pide en runtime; el micrófono graba PCM16 mono a 16 kHz solo mientras el botón está activo.
 
 ## Completado
 - Commit inicial del repositorio.
@@ -71,6 +76,7 @@ LAIN = LOCAL ARTIFICIAL INTELIGENCE NEURONAL. Asistente Edge AI con consciencia 
 - Fase C.1 (contrato de salida) — causa raíz del JSON-only encontrada en el TEMPLATE del GGUF: con `enable_thinking=false` la plantilla pre-siembra `<think>\n\n</think>\n\n` vacío y, combinada con el prompt que obliga a empezar con `<think>JSON</think>`, el modelo emite solo el JSON y se detiene (además el JSON se parece a un tool call). En modo por defecto el comportamiento es mixto (52/82 solo-JSON, 0/82 con `<think>`, resto respuestas directas limpias). Con prompt de personalidad pura (sin JSON) el modelo responde directo, empático y limpio (sonda s27/s41). Contrato propuesto: `<think>…</think>` como único marcador estructural (compatible con llama.cpp, ThinkParser y el dataset SFT); dentro del bloque, JSON de metacognición OPCIONAL (belief_capture ya tolera su ausencia) o razonamiento libre; respuesta visible = texto tras `</think>`. MVP: prompt de identidad sin JSON + modo por defecto; la metacognición JSON vuelve con el SFT (LAIN-ES MVP).
 
 ## Completado (nuevo)
+- Voz (T2.1–T2.3, T3.1–T3.2): captura PCM16 16 kHz con `AudioRecord`, permiso `RECORD_AUDIO`, puente C `lain_stt.c` + bindings FFI + isolate de transcripción, descarga/gestión de `ggml-base.bin` y TTS nativo con `SentenceStreamer` (solo texto visible, nunca `<think>`), toggle persistido y botón de micrófono que deja el texto editable. `flutter analyze` limpio, 178 pruebas en verde y APK debug de producción compilado con `liblain_stt.so` en ambas ABIs.
 - S1–S6 de gestión de modelos: `INTERNET` en el manifest principal, `usageBytes`/`removeOrphan`/`purgeIncomplete`/`removeAllModels`/`clearActiveModel`; sonda `general.architecture` del GGUF y `engine_capabilities` verificadas contra `libllama.so` (`lfm2` sí, `lfm3` no) con bloqueo de activación; `hf_url`/`hf_client` (API pública, SHA-256 de LFS `sha256`/`oid`), `model_downloader` (Range, cancelación, hash, espacio, redirecciones validadas también al CDN `*.hf.co`) y `registerDownloaded` por renombrado; catálogo y pantalla de descargas con eliminación. 141 pruebas en verde y `flutter analyze` limpio.
 - F4: separación de APK de producción (`com.lain.lain_mobile`, 31.369.787 bytes, SHA-256 `e5b8208a…`) y experimental (`com.lain.lain_mobile.exp`, 14.006.688 bytes, SHA-256 `e215d246…`); producción conserva las `.so` originales verificadas byte a byte, experimental solo arm64-v8a con 7 variantes GGML y carga dinámica; ambas instalables simultáneamente con datos independientes. `flutter analyze` sin problemas, `flutter test` 161 satisfactorias.
 - F5 (primer ensayo real, 2026-11-03): carga dinámica confirmada en Samsung Galaxy A14 con `libggml-cpu-android_armv8.2_2.so`, inferencia sin error, 50 tokens, 4.06 tok/s, TTFT 14.228 s, total 26.701 s, pico RSS 1.447,9 MB. Observación cualitativa: el usuario reporta que producción tarda más, sin medición controlada ni cinco muestras.
@@ -157,6 +163,7 @@ Resultados confirmados (una única muestra):
 **F5 no se declara completada. F6 no se inicia.**
 
 ## Próximos pasos
+- Probar la voz en el teléfono: descargar Whisper base (~148 MB) desde «Modelos», dictar 3 frases en español, corregir el texto en el campo y activar la voz de respuesta; medir latencia de transcripción y confirmar que el TTS es-ES funciona offline.
 - Instalar el APK release nuevo y probar la descarga: bajar LFM2.5-1.2B (731 MB) desde «Modelos → Descargar modelos», cancelar y reanudar, activar, conversar, borrar; probar también una URL manual y el modo avión.
 - Recompilar llama.cpp con `lfm3` (T4.9) si LFM3-1.7B vale la pena tras probarlo: hoy se descarga pero `setActiveModel` lo bloquea con mensaje claro.
 - Corregir el sampling por familia de modelo (Liquid recomienda `temp 0.1 / top_k 50 / repeat_penalty 1.05`; el puente usa `0.7 / 40`, sin repeat penalty) cuando se elija el modelo definitivo.
@@ -168,7 +175,7 @@ Resultados confirmados (una única muestra):
 - T9: portar la visión en dos pasos a la app (cámara, liberar VLM antes del LLM).
 - T9.7: pedir el caption del VLM en inglés (más preciso) y que Qwen lo traduzca; hoy arrastra «conductor's» y «un blusa».
 - T11.3 (resto): comparar Qwen2.5-3B contra los candidatos restantes (Salamandra-2B, EuroLLM-1.7B, Qwen3-1.7B, Gemma-3-1B) con `test/eval_es.py` y registrar resultados.
-- Fase 2: medir latencia en un teléfono arm64 real (T1.8); historial multi-turno en el prompt (requiere extender `lain_format_prompt` a N mensajes y recompilar las `.so`); después STT (T2.x).
+- Fase 2: medir latencia en un teléfono arm64 real (T1.8); historial multi-turno en el prompt (requiere extender `lain_format_prompt` a N mensajes y recompilar las `.so`).
 - Interalimentación (T13.6–T13.9): cerrar el bucle de mejora LLM ↔ VLM ↔ experiencias — el LLM re-consulta al VLM cuando la descripción visual no alcanza, cada turno deja una experiencia en `lain_experiences.jsonl` que alimenta SFT/DPO, con filtro de calidad, revisión humana y evaluación de regresión por versión.
 - Modelo propio pequeño (Pixys, T15): el 3B Q4 de 1.9 GB condiciona el APK, la RAM y el primer arranque; se evalúan modelos de 300M–1B y, en paralelo, la ruta de aprendizaje Pixys (vault `Boveda/AI/IA/Proyecto Pixys.md`) para construir uno propio con tokenizer español.
 - Nuevas líneas (ver TASKS.md): enrutador Laya/BMP, visión en dos pasos con MiniCPM-V 4, trazas `<think>`, persistencia `lain_experiences.jsonl` y ciclo SFT/CoT + DPO.

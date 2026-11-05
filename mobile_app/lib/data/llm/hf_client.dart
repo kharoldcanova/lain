@@ -83,20 +83,24 @@ class HfClient {
 
   /// Archivos que corresponden a [reference].
   ///
-  /// Con un enlace a repositorio devuelve todos los `.gguf`; con un enlace a
-  /// archivo devuelve ese archivo con su tamaño y SHA-256 cuando la API los
-  /// informa. Si la API no responde se propaga [HfClientException].
-  Future<List<HfFile>> resolve(HfReference reference) async {
+  /// Con un enlace a repositorio devuelve todos los archivos con las
+  /// extensiones pedidas (`.gguf` por defecto); con un enlace a archivo
+  /// devuelve ese archivo con su tamaño y SHA-256 cuando la API los informa.
+  /// Si la API no responde se propaga [HfClientException].
+  Future<List<HfFile>> resolve(
+    HfReference reference, {
+    Set<String> extensions = const <String>{'.gguf'},
+  }) async {
     final repo = reference.repo;
     if (!_repoPattern.hasMatch(repo)) {
       throw const HfClientException('el nombre del repositorio no es válido');
     }
-    final files = await listGgufFiles(repo);
+    final files = await listFiles(repo, extensions: extensions);
     final wanted = reference.file;
     if (wanted == null) {
       if (files.isEmpty) {
-        throw const HfClientException(
-          'el repositorio no tiene archivos .gguf para descargar',
+        throw HfClientException(
+          'el repositorio no tiene archivos ${extensions.join(' o ')} para descargar',
         );
       }
       return files;
@@ -117,10 +121,20 @@ class HfClient {
   }
 
   /// Lista los `.gguf` de [repo], ordenados por nombre.
-  Future<List<HfFile>> listGgufFiles(String repo) async {
+  Future<List<HfFile>> listGgufFiles(String repo) =>
+      listFiles(repo, extensions: const <String>{'.gguf'});
+
+  /// Lista los archivos de [repo] con las [extensions] pedidas.
+  Future<List<HfFile>> listFiles(
+    String repo, {
+    Set<String> extensions = const <String>{'.gguf'},
+  }) async {
     if (!_repoPattern.hasMatch(repo)) {
       throw const HfClientException('el nombre del repositorio no es válido');
     }
+    final normalized = extensions
+        .map((extension) => extension.toLowerCase())
+        .toSet();
     final uri = _modelUri(repo);
     if (!_policy.allows(uri)) {
       throw const HfClientException('la API de Hugging Face no es accesible');
@@ -136,7 +150,9 @@ class HfClient {
     for (final item in siblings) {
       if (item is! Map) continue;
       final name = item['rfilename'];
-      if (name is! String || !name.toLowerCase().endsWith('.gguf')) continue;
+      if (name is! String) continue;
+      final lower = name.toLowerCase();
+      if (!normalized.any(lower.endsWith)) continue;
       final lfs = item['lfs'];
       final int size;
       final String? sha;
