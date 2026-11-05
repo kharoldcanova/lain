@@ -43,4 +43,4 @@ Modelo: Base multilingüe (~148 MB). TTS: nativo de Android.
 - `tools/build_whisper_android.sh`: `liblain_stt.so` compilado para arm64-v8a y x86_64; solo exporta `lain_stt_load`, `lain_stt_free`, `lain_stt_transcribe`.
 - `flutter build apk --debug --flavor prod`: APK generado con `liblain_stt.so` en ambas ABIs.
 - `flutter build apk --release --flavor experimental --target-platform android-arm64`: APK experimental `0.1.0-exp` de 15.083.154 bytes (SHA-256 `46d7876c…`) con `liblain_stt.so` arm64, `INTERNET` y `RECORD_AUDIO`, sin GGUF empaquetado.
-- Pendiente de validación en dispositivo: calidad de transcripción, latencia y voz es-ES offline.
+- Validación en dispositivo (2026-11-05, Samsung Galaxy A14): dictado con Whisper y TTS progresivo probados con éxito. Calidad de transcripción y voz es-ES offline confirmadas por el usuario.
