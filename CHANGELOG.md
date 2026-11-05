@@ -9,7 +9,8 @@
 - Modelo `ggml-base.bin` (~148 MB) descargable desde `ggerganov/whisper.cpp` en «Modelos → Voz (Whisper)», con borrado y medición de espacio; vive en `files/models/whisper/`.
 - TTS con el motor nativo de Android (es-ES, fallback al idioma del sistema) y `SentenceStreamer`: habla solo el texto visible por oraciones completas, nunca el bloque `<think>`; toggle persistido en `voice_settings.json` (apagado por defecto).
 - `liblain_stt.so` exporta solo `lain_stt_*` (version script) y enlaza whisper/ggml estáticos para no colisionar con `liblain_llm.so`.
-- Pruebas nuevas: `sentence_streamer_test`, `progressive_speech_test`, `voice_settings_test`, `whisper_model_manager_test`, `hf_bin_url_test`. `flutter analyze` limpio y 178 pruebas en verde; APK debug de producción compilado con `liblain_stt.so` en ambas ABIs.
+- Pruebas nuevas: `sentence_streamer_test`, `progressive_speech_test`, `voice_settings_test`, `whisper_model_manager_test`, `hf_bin_url_test`. `flutter analyze` limpio y 178 pruebas en verde.
+- APK experimental release `0.1.0-exp` compilado: 15.083.154 bytes, SHA-256 `46d7876c78a33efc4028609a695068dc6a3626c7db84f16859532b9a2ec51a51`, solo arm64-v8a, con `liblain_stt.so` y sin GGUF empaquetado. También se compiló el release de producción (33.575.020 bytes, SHA-256 `c418a53d…`).
 
 ### F4 — Separación de APK de producción y experimental (completada)
 

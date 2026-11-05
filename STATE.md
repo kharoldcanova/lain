@@ -1,7 +1,7 @@
 # STATE.md
 
 ## Tarea en curso
-Voz completada (2026-11-05): dictado local con whisper.cpp (`ggml-base.bin`, ~148 MB) y TTS nativo de Android con lectura progresiva por oraciones. El APK de producción incluye `liblain_stt.so` para arm64-v8a y x86_64; la sección «Voz (Whisper)» de Modelos descarga el modelo desde Hugging Face. `flutter analyze` limpio y 178 pruebas en verde. F5 (validación experimental en el A14) queda como comprobación opcional: el usuario considera viable el APK experimental por ahora, con una sola muestra registrada y sin comparación controlada.
+Voz completada (2026-11-05): dictado local con whisper.cpp (`ggml-base.bin`, ~148 MB) y TTS nativo de Android con lectura progresiva por oraciones. **APK experimental release `0.1.0-exp` compilado: 15.083.154 bytes, SHA-256 `46d7876c…`, solo arm64-v8a, con `liblain_stt.so` y sin GGUF empaquetado.** La sección «Voz (Whisper)» de Modelos descarga el modelo desde Hugging Face. `flutter analyze` limpio y 178 pruebas en verde. F5 (validación experimental en el A14) queda como comprobación opcional: el usuario considera viable el APK experimental por ahora, con una sola muestra registrada y sin comparación controlada.
 
 ## Objetivo actual
 Consolidar la voz en el dispositivo: probar el dictado y el TTS en el teléfono real, medir latencia de transcripción y confirmar que la voz es-ES funciona offline. F5 sigue abierta (cinco muestras, comparación con producción, estabilidad) pero no bloquea el resto del trabajo. F6 (distribución y endurecimiento) no se inicia hasta cerrar F5.
