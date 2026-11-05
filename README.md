@@ -15,10 +15,10 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 - **Plataforma principal:** Android (base extensible a iOS).
 - **Frontend / UI:** Flutter (Dart).
 - **Motor de Inferencia de Texto (LLM):** `llama.cpp` vía FFI (LFM2.5-1.2B-Instruct cuantizado en GGUF Q4_K_M en el móvil; Qwen2.5-3B-Instruct afinado en PC).
-- **Motor de Voz (STT/TTS):** `whisper.cpp` (entrada) y Kokoro/Piper o TTS nativo (salida).
+- **Motor de Voz (STT/TTS):** `whisper.cpp` (entrada, `ggml-base.bin` ~148 MB multilingüe) y TTS nativo de Android (salida, voz es-ES del sistema).
 - **Clasificador de decisión/emoción:** Laya / BMP (~15 ms, ~100 MB RAM).
 - **Percepción visual:** MiniCPM-V 4 (GGUF + `mmproj`) describe la imagen en texto y ese texto entra al LLM de texto (dos pasos).
-- **Builds:** el APK ya no empaqueta modelos; se descargan desde Hugging Face (pantalla «Modelos» / «Descargar modelos»). Dos flavors: producción (`com.lain.lain_mobile`, 31.4 MB, motor estático) y experimental (`com.lain.lain_mobile.exp`, 14.0 MB, solo arm64-v8a, 7 variantes GGML con carga dinámica y pantalla «Diagnóstico»). Detalle en `STATE.md` y `TASKS.md`.
+- **Builds:** el APK ya no empaqueta modelos (ni GGUF ni Whisper); se descargan desde Hugging Face (pantalla «Modelos» / «Descargar modelos» / «Voz (Whisper)»). Dos flavors: producción (`com.lain.lain_mobile`, 33,6 MB, motor estático) y experimental (`com.lain.lain_mobile.exp`, 15,1 MB, solo arm64-v8a, 7 variantes GGML con carga dinámica y pantalla «Diagnóstico»). Ambos incluyen `RECORD_AUDIO` para el dictado. Detalle en `STATE.md` y `TASKS.md`.
 - **Capacitación / Pre-entrenamiento (PC):** Python + PyTorch + Unsloth (SFT/CoT y DPO).
 - **Persistencia local:** SQLite (`package:sqlite3`, FTS5 trigram) para historial y memoria + `lain_experiences.jsonl` (trazas metacognitivas).
 - **Restricciones:** 100% offline, privacidad total de los datos en el dispositivo.
@@ -33,7 +33,9 @@ LAIN busca trascender la respuesta transaccional para construir una presencia co
 
 ## Restricciones de memoria
 
-- Modelo base: Qwen2.5-3B-Instruct (3.1B parámetros, texto) afinado con QLoRA; GGUF Q4_K_M ~1.9–2.0 GB disco.
+- Modelo móvil: LFM2.5-1.2B-Instruct (1.2B parámetros, texto) en GGUF Q4_K_M ~0.7 GB disco (~731 MB descargable). Licencia de LiquidAI; compatible con el motor actual (`lfm2`).
+- Modelo de PC (fine-tuning): Qwen2.5-3B-Instruct (3.1B parámetros, texto) afinado con QLoRA; GGUF Q4_K_M ~1.9–2.0 GB disco.
+- Modelo de voz (STT): Whisper base multilingüe `ggml-base.bin` ~148 MB disco.
 - VLM de visión MiniCPM-V 4 Q4_K_M + mmproj: ~3.0 GB disco (se carga solo cuando hay imagen).
 - Enrutador Laya/BMP: ~100 MB RAM.
 - Consumo total estimado: ~2.2–2.5 GB RAM en texto; ~3.0–3.2 GB cuando se procesa una imagen (VLM y LLM se cargan en secuencia).

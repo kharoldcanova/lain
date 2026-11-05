@@ -73,7 +73,7 @@ El modelo no navega: la app hace la petición HTTP. Sin red, el RAG sigue respon
                           │
                           ▼
 ┌───────────────────────────────────────────────────────────┐
-│ 2. Inferencia en Qwen2.5-3B-Instruct / llama.cpp          │
+│ 2. Inferencia en LFM2.5-1.2B-Instruct / llama.cpp         │
 │    - Procesa texto y audio (Whisper); visión en T9         │
 │    - Generación de bloque <think> (HOT / Metacognición)  │
 │    - Evaluación de incertidumbre y posición empática      │
