@@ -50,14 +50,20 @@ Basado en el documento fuente del proyecto y en el vault «Teoría y Arquitectur
   - Falta la medición arm64 real; el APK ya se puede probar con MiniCPM o Qwen sin recompilar (ver T15.6).
 
 ### Funcionalidad 2: Reconocimiento de voz a texto (STT)
-- [ ] T2.1 Capturar audio del micrófono en Flutter.
-- [ ] T2.2 Integrar whisper.cpp vía FFI para STT.
-- [ ] T2.3 Convertir audio a texto editable en el chat.
+- [x] T2.1 Capturar audio del micrófono en Flutter.
+  - `AudioRecorder.kt` (`AudioRecord`, PCM16 mono 16 kHz) + canal `com.lain.lain_mobile/audio`, permiso `RECORD_AUDIO` en runtime y botón de dictado en el chat.
+- [x] T2.2 Integrar whisper.cpp vía FFI para STT.
+  - `tools/build_whisper_android.sh` (whisper.cpp `v1.9.5`, estático, version script), puente `lain_stt.c`, bindings `stt_native.dart` e isolate propio; `liblain_stt.so` para arm64-v8a y x86_64. Modelo `ggml-base.bin` (~148 MB) descargable desde Hugging Face en «Modelos → Voz (Whisper)».
+- [x] T2.3 Convertir audio a texto editable en el chat.
+  - Al detener la grabación se transcribe y el texto cae en el `TextField`; no se envía automáticamente.
 
 ### Funcionalidad 3: Síntesis de texto a voz (TTS)
-- [ ] T3.1 Integrar motor TTS (Kokoro/Piper o nativo).
-- [ ] T3.2 Reproducir respuesta en voz de forma progresiva (por oraciones).
+- [x] T3.1 Integrar motor TTS (Kokoro/Piper o nativo).
+  - Decisión: `TextToSpeech` nativo de Android (es-ES con fallback al idioma del sistema), canal `com.lain.lain_mobile/tts`, sin dependencias nuevas.
+- [x] T3.2 Reproducir respuesta en voz de forma progresiva (por oraciones).
+  - `SentenceStreamer` + `ProgressiveSpeech`: consume solo `ThinkParser.visible`, habla oraciones cerradas mientras llegan los tokens y descarta el bloque `<think>`. Toggle persistido (apagado por defecto).
 - [ ] T3.3 Liberar recursos de GPU/NPU al salir del chat.
+  - El TTS se apaga en `onDestroy` y al desactivar el toggle; falta la liberación explícita al salir de la pantalla.
 
 ### Funcionalidad 4: Gestión de modelos locales
 - [x] T4.1 Verificar disponibilidad de archivos `.gguf` (mmproj y `.bin` pendientes) en almacenamiento: `ModelManager.inventory()` + detección de instalaciones incompletas y manifiestos corruptos.

@@ -10,6 +10,7 @@ import '../../data/llm/model_installer.dart';
 import '../../data/llm/model_manager.dart';
 import '../../data/llm/model_metadata.dart';
 import '../chat/chat_controller.dart';
+import '../voice/voice_providers.dart';
 import 'model_catalog_screen.dart';
 
 /// Gestor de modelos de la app, abierto sobre `files/models/`.
@@ -64,6 +65,9 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
   String? _activeId;
   int? _freeBytes;
   int _usedBytes = 0;
+  File? _whisperFile;
+  int _whisperBytes = 0;
+  bool _whisperDownloading = false;
   bool _loading = true;
 
   @override
@@ -86,6 +90,15 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
         installer.freeBytes().catchError((Object _) => 0),
         manager.usageBytes(),
       ]);
+      File? whisperFile = _whisperFile;
+      var whisperBytes = _whisperBytes;
+      try {
+        final whisper = await ref.read(whisperModelManagerProvider.future);
+        whisperFile = await whisper.locate();
+        whisperBytes = await whisper.usageBytes();
+      } on Object {
+        // La sección de voz es opcional: nunca bloquea el inventario de modelos.
+      }
       if (!mounted) return;
       setState(() {
         _models = results[0] as List<ModelMetadata>;
@@ -94,6 +107,8 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
         _activeId = results[3] as String?;
         _freeBytes = results[4] as int?;
         _usedBytes = results[5] as int;
+        _whisperFile = whisperFile;
+        _whisperBytes = whisperBytes;
         _loading = false;
       });
     } on Object catch (error) {
@@ -366,6 +381,97 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
     if (mounted) _snack('Modelo importado y activado: ${imported!.name}');
   }
 
+  Future<void> _downloadWhisper() async {
+    if (_whisperDownloading) return;
+    setState(() => _whisperDownloading = true);
+    final manager = await ref.read(whisperModelManagerProvider.future);
+    final installer = ref.read(modelInstallerProvider);
+    final progress = ValueNotifier<double?>(null);
+    Object? failure;
+
+    final task = () async {
+      try {
+        await manager.download(
+          onProgress: (value) => progress.value = value.fraction,
+          freeBytes: installer.freeBytes,
+        );
+      } on Object catch (error) {
+        failure = error;
+      }
+    }();
+
+    if (!mounted) {
+      await task;
+      return;
+    }
+    final dialog = showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Descargando modelo de voz'),
+        content: ValueListenableBuilder<double?>(
+          valueListenable: progress,
+          builder: (context, value, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Whisper base multilingüe (~148 MB).'),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(value: value),
+              if (value != null) ...[
+                const SizedBox(height: 4),
+                Text('${(value * 100).toStringAsFixed(0)} %'),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    await task;
+    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    await dialog;
+    if (!mounted) return;
+    setState(() => _whisperDownloading = false);
+    await _refresh();
+    if (!mounted) return;
+    if (failure != null) {
+      _snack('No se pudo descargar el modelo de voz: $failure');
+    } else {
+      _snack('Modelo de voz descargado');
+    }
+  }
+
+  Future<void> _deleteWhisper() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Eliminar el modelo de voz?'),
+        content: const Text(
+          'El dictado dejará de funcionar hasta que lo descargues de nuevo. '
+          'Los modelos de lenguaje, las conversaciones y los recuerdos no se tocan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final manager = await ref.read(whisperModelManagerProvider.future);
+    try {
+      final freed = await manager.delete();
+      await _refresh();
+      if (mounted) _snack('Espacio liberado: ${_size(freed)}');
+    } on Object catch (error) {
+      if (mounted) _snack('$error');
+    }
+  }
+
   void _snack(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -400,6 +506,8 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
                 padding: const EdgeInsets.all(12),
                 children: [
                   _storageCard(theme),
+                  const SizedBox(height: 16),
+                  _voiceCard(theme),
                   const SizedBox(height: 16),
                   Text('Modelos registrados', style: theme.textTheme.titleSmall),
                   const SizedBox(height: 4),
@@ -459,6 +567,39 @@ class _ModelScreenState extends ConsumerState<ModelScreen> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _voiceCard(ThemeData theme) {
+    final file = _whisperFile;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        leading: const Icon(Icons.graphic_eq, color: LainColors.primary),
+        title: const Text('Voz (Whisper)'),
+        subtitle: Text(
+          file == null
+              ? 'Sin modelo de voz. Descargá ggml-base.bin (~148 MB) para dictar.'
+              : '${file.uri.pathSegments.last} · ${_size(_whisperBytes)} · dictado local',
+          style: theme.textTheme.bodySmall,
+        ),
+        trailing: _whisperDownloading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : file == null
+                ? TextButton(
+                    onPressed: _downloadWhisper,
+                    child: const Text('Descargar'),
+                  )
+                : IconButton(
+                    onPressed: _deleteWhisper,
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: 'Eliminar modelo de voz',
+                  ),
+      ),
     );
   }
 

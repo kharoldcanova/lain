@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Voz — Whisper (STT) + TTS progresivo (completada, 2026-11-05)
+
+- Dictado local con whisper.cpp `v1.9.5`: `liblain_stt.so` compilado para arm64-v8a y x86_64, puente C `lain_stt.c`, bindings FFI e isolate de transcripción (`stt_native.dart`).
+- Captura de micrófono nativa (`AudioRecord`, PCM16 mono 16 kHz) con permiso `RECORD_AUDIO` solicitado en runtime; botón de dictado que deja la transcripción editable en el chat.
+- Modelo `ggml-base.bin` (~148 MB) descargable desde `ggerganov/whisper.cpp` en «Modelos → Voz (Whisper)», con borrado y medición de espacio; vive en `files/models/whisper/`.
+- TTS con el motor nativo de Android (es-ES, fallback al idioma del sistema) y `SentenceStreamer`: habla solo el texto visible por oraciones completas, nunca el bloque `<think>`; toggle persistido en `voice_settings.json` (apagado por defecto).
+- `liblain_stt.so` exporta solo `lain_stt_*` (version script) y enlaza whisper/ggml estáticos para no colisionar con `liblain_llm.so`.
+- Pruebas nuevas: `sentence_streamer_test`, `progressive_speech_test`, `voice_settings_test`, `whisper_model_manager_test`, `hf_bin_url_test`. `flutter analyze` limpio y 178 pruebas en verde; APK debug de producción compilado con `liblain_stt.so` en ambas ABIs.
+
 ### F4 — Separación de APK de producción y experimental (completada)
 
 - Dos APK con `applicationId` distinto: producción `com.lain.lain_mobile` (31.369.787 bytes, SHA-256 `e5b8208a…`), experimental `com.lain.lain_mobile.exp` (14.006.688 bytes, SHA-256 `e215d246…`).

@@ -101,6 +101,7 @@ final RegExp _namePattern = RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]*$');
 HfReference parseHuggingFaceUrl(
   String input, {
   HfUrlPolicy policy = const HfUrlPolicy(),
+  Set<String> extensions = const <String>{'.gguf'},
 }) {
   final text = input.trim();
   if (text.isEmpty) {
@@ -136,10 +137,14 @@ HfReference parseHuggingFaceUrl(
     return HfReference(repo: repo);
   }
 
+  final normalized = extensions
+      .map((extension) => extension.toLowerCase())
+      .toSet();
   final kind = segments[2];
   if (kind != 'resolve' && kind != 'blob') {
-    throw const HfUrlException(
-      'el enlace debe apuntar a un repositorio o a un archivo .gguf',
+    throw HfUrlException(
+      'el enlace debe apuntar a un repositorio o a un archivo '
+      '${normalized.join(' o ')}',
     );
   }
   if (segments.length < 5) {
@@ -152,8 +157,10 @@ HfReference parseHuggingFaceUrl(
   if (revision.contains('..') || folderUnsafe(revision)) {
     throw const HfUrlException('la revisión del enlace no es válida');
   }
-  if (!file.toLowerCase().endsWith('.gguf')) {
-    throw const HfUrlException('el archivo debe ser un .gguf');
+  if (!normalized.any(file.toLowerCase().endsWith)) {
+    throw HfUrlException(
+      'el archivo debe ser ${normalized.map((extension) => 'un $extension').join(' o ')}',
+    );
   }
   if (file.split('/').any(folderUnsafe)) {
     throw const HfUrlException('el nombre del archivo no es válido');
